@@ -1520,6 +1520,204 @@ body {
   color: var(--text-primary);
 }
 
+/* Split Critique side-by-side layout */
+.split-critique-container {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 30px;
+  margin-top: 24px;
+  height: 650px;
+  align-items: stretch;
+}
+
+.critique-assets-column {
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-right: 12px;
+  scroll-behavior: smooth;
+}
+
+.critique-comments-column {
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-left: 20px;
+  position: relative;
+  border-left: 1px dashed rgba(255, 255, 255, 0.1);
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbars for the side-by-side columns */
+.critique-assets-column::-webkit-scrollbar,
+.critique-comments-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.critique-assets-column::-webkit-scrollbar-track,
+.critique-comments-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.critique-assets-column::-webkit-scrollbar-thumb,
+.critique-comments-column::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.critique-assets-column::-webkit-scrollbar-thumb:hover,
+.critique-comments-column::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Critique Asset Frame */
+.critique-asset-card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  scroll-margin-top: 10px;
+}
+
+.critique-asset-card.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+  background: rgba(99, 102, 241, 0.03);
+}
+
+.critique-asset-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.critique-asset-header span.tag {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: var(--text-secondary);
+}
+
+.critique-asset-image-wrapper {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  max-height: 380px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.critique-asset-image-wrapper img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* Word-style Comment Bubble */
+.comment-bubble {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  border-left: 4px solid var(--border-color);
+  scroll-margin-top: 10px;
+}
+
+.comment-bubble:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(2px);
+}
+
+.comment-bubble.active {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: var(--primary) !important;
+  box-shadow: var(--shadow-md);
+}
+
+.comment-bubble-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.comment-bubble-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.comment-bubble-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.comment-bubble-recommendation {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  border-left: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Comment Connector line pointing left to image */
+.comment-bubble.active::before {
+  content: "";
+  position: absolute;
+  left: -21px;
+  top: 50%;
+  width: 20px;
+  border-top: 2px dashed var(--primary);
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+/* Comment types left-border highlights */
+.comment-bubble.type-usability {
+  --border-color: rgba(239, 68, 68, 0.5); /* red */
+}
+.comment-bubble.type-usability.sev-minor {
+  --border-color: rgba(16, 185, 129, 0.5); /* green */
+}
+.comment-bubble.type-usability.sev-moderate {
+  --border-color: rgba(245, 158, 11, 0.5); /* orange */
+}
+
+.comment-bubble.type-hierarchy {
+  --border-color: rgba(99, 102, 241, 0.5); /* indigo */
+}
+
+.comment-bubble.type-consistency {
+  --border-color: rgba(167, 139, 250, 0.5); /* purple */
+}
+
+.comment-bubble.type-accessibility {
+  --border-color: rgba(14, 165, 233, 0.5); /* sky blue */
+}
+
 /* Responsiveness Settings */
 @media (max-width: 1024px) {
   .app-container {

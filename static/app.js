@@ -479,62 +479,172 @@ document.addEventListener("DOMContentLoaded", () => {
     // Critique text fields and Overall Impression
     const critique = analysis.design_critique || {};
     document.getElementById("critique-overall-impression").textContent = critique.overall_impression || "--";
-    document.getElementById("visuals-theme").textContent = critique.visual_theme || "--";
-    document.getElementById("visuals-feedback").textContent = critique.color_palette_feedback || "--";
 
-    // Usability Findings Table
-    const usabilityTbody = document.getElementById("usability-tbody");
-    usabilityTbody.innerHTML = "";
-    const usabilityFindings = critique.usability_findings || [];
-    if (usabilityFindings.length > 0) {
+    // Setup Split Visual Design Critique Playbook
+    const assetsColumn = document.getElementById("critique-assets-column");
+    const commentsColumn = document.getElementById("critique-comments-column");
+    assetsColumn.innerHTML = "";
+    commentsColumn.innerHTML = "";
+
+    const images = data.images || {};
+    const imgKeys = Object.keys(images).filter(k => images[k]);
+
+    if (imgKeys.length > 0) {
+      // 1. Populate Assets Column
+      imgKeys.forEach(key => {
+        const card = document.createElement("div");
+        card.className = "critique-asset-card";
+        card.id = `critique-asset-${key}`;
+        card.setAttribute("data-asset-key", key);
+
+        card.innerHTML = `
+          <div class="critique-asset-header">
+            <strong>${key.toUpperCase().replace("_", " ")}</strong>
+            <span class="tag">Visual Target</span>
+          </div>
+          <div class="critique-asset-image-wrapper">
+            <img src="${images[key]}" alt="${key} asset" crossorigin="anonymous">
+          </div>
+        `;
+        assetsColumn.appendChild(card);
+      });
+
+      // 2. Populate Comments Column with Word-Style Bubbles
+      let bubbleCount = 0;
+      
+      const createBubble = (type, title, body, recommendation, targetAsset, severityText = "") => {
+        bubbleCount++;
+        const bubble = document.createElement("div");
+        let sevClass = "";
+        if (severityText) {
+          const s = severityText.toLowerCase();
+          if (severityText.includes("🔴") || s.includes("critical")) sevClass = "sev-critical";
+          else if (severityText.includes("🟡") || s.includes("moderate")) sevClass = "sev-moderate";
+          else if (severityText.includes("🟢") || s.includes("minor")) sevClass = "sev-minor";
+        }
+        bubble.className = `comment-bubble type-${type} ${sevClass}`;
+        bubble.id = `comment-bubble-${bubbleCount}`;
+        bubble.setAttribute("data-target-asset", targetAsset);
+
+        let recHtml = "";
+        if (recommendation) {
+          recHtml = `<div class="comment-bubble-recommendation"><strong>Actionable Play:</strong> ${recommendation}</div>`;
+        }
+
+        let badgeHtml = "";
+        if (severityText) {
+          let badgeColor = "minor";
+          if (sevClass === "sev-critical") badgeColor = "critical";
+          else if (sevClass === "sev-moderate") badgeColor = "moderate";
+          badgeHtml = `<span class="severity-badge ${badgeColor}">${severityText}</span>`;
+        }
+
+        bubble.innerHTML = `
+          <div class="comment-bubble-header">
+            <span class="comment-bubble-title">${type.toUpperCase()}: ${title}</span>
+            ${badgeHtml}
+          </div>
+          <div class="comment-bubble-body">${body}</div>
+          ${recHtml}
+        `;
+
+        // Interaction event: click bubble -> scroll image into view
+        bubble.addEventListener("click", () => {
+          // Highlight active state
+          document.querySelectorAll(".comment-bubble").forEach(b => b.classList.remove("active"));
+          document.querySelectorAll(".critique-asset-card").forEach(c => c.classList.remove("active"));
+          
+          bubble.classList.add("active");
+          const targetCard = document.getElementById(`critique-asset-${targetAsset}`);
+          if (targetCard) {
+            targetCard.classList.add("active");
+            targetCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+        });
+
+        commentsColumn.appendChild(bubble);
+      };
+
+      // Helper function to guess which image key fits a critique text segment
+      const guessTargetAsset = (text) => {
+        const t = (text || "").toLowerCase();
+        if (t.includes("logo") || t.includes("branding icon") || t.includes("iconography")) {
+          return imgKeys.includes("logo") ? "logo" : imgKeys[0];
+        }
+        if (t.includes("hero") || t.includes("headline") || t.includes("h1") || t.includes("first impression") || t.includes("fold")) {
+          return imgKeys.includes("hero") ? "hero" : imgKeys[0];
+        }
+        if (t.includes("og") || t.includes("open graph") || t.includes("banner") || t.includes("social")) {
+          if (imgKeys.includes("og_image")) return "og_image";
+          if (imgKeys.includes("hero")) return "hero";
+        }
+        return imgKeys[0]; // fallback
+      };
+
+      // Add Usability bubbles
+      const usabilityFindings = critique.usability_findings || [];
       usabilityFindings.forEach(item => {
-        const row = document.createElement("tr");
-        let badgeClass = "minor";
-        const sev = (item.severity || "").toLowerCase();
-        if (item.severity.includes("🔴") || sev.includes("critical")) badgeClass = "critical";
-        else if (item.severity.includes("🟡") || sev.includes("moderate")) badgeClass = "moderate";
-        
-        row.innerHTML = `
-          <td><strong>${item.issue}</strong></td>
-          <td><span class="severity-badge ${badgeClass}">${item.severity}</span></td>
-          <td>${item.recommendation}</td>
-        `;
-        usabilityTbody.appendChild(row);
+        const target = guessTargetAsset(item.issue + " " + item.recommendation);
+        createBubble("usability", "Usability Audit", item.issue, item.recommendation, target, item.severity);
       });
-    } else {
-      usabilityTbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No usability issues identified.</td></tr>';
-    }
 
-    // Visual Hierarchy details
-    const vh = critique.visual_hierarchy || {};
-    document.getElementById("critique-first-impression").textContent = vh.first_impression || "--";
-    document.getElementById("critique-is-first-correct").textContent = vh.is_first_impression_correct || "--";
-    document.getElementById("critique-reading-flow").textContent = vh.reading_flow || "--";
-    document.getElementById("critique-emphasis").textContent = vh.emphasis_critique || "--";
+      // Add Visual Hierarchy bubbles
+      const vh = critique.visual_hierarchy || {};
+      if (vh.first_impression) {
+        const target = guessTargetAsset(vh.first_impression);
+        createBubble("hierarchy", "First Impression Focus", `First impression focus is: <strong>${vh.first_impression}</strong>.`, `Is focus correct? ${vh.is_first_impression_correct}`, target);
+      }
+      if (vh.reading_flow) {
+        const target = guessTargetAsset(vh.reading_flow);
+        createBubble("hierarchy", "Reading Flow Pattern", vh.reading_flow, `CTA Emphasis critique: ${vh.emphasis_critique}`, target);
+      }
 
-    // Consistency Findings Table
-    const consistencyTbody = document.getElementById("consistency-tbody");
-    consistencyTbody.innerHTML = "";
-    const consistencyFindings = critique.consistency_findings || [];
-    if (consistencyFindings.length > 0) {
+      // Add Consistency bubbles
+      const consistencyFindings = critique.consistency_findings || [];
       consistencyFindings.forEach(item => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td><strong>${item.element}</strong></td>
-          <td>${item.issue}</td>
-          <td>${item.recommendation}</td>
-        `;
-        consistencyTbody.appendChild(row);
+        const target = guessTargetAsset(item.element + " " + item.issue);
+        createBubble("consistency", `${item.element} Consistency`, item.issue, item.recommendation, target);
       });
-    } else {
-      consistencyTbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No design consistency issues identified.</td></tr>';
-    }
 
-    // Accessibility details
-    const access = critique.accessibility || {};
-    document.getElementById("critique-contrast").textContent = access.color_contrast || "--";
-    document.getElementById("critique-touch").textContent = access.touch_targets || "--";
-    document.getElementById("critique-readability").textContent = access.text_readability || "--";
+      // Add Accessibility bubbles
+      const access = critique.accessibility || {};
+      if (access.color_contrast) {
+        createBubble("accessibility", "Color Contrast Audit", `Core color contrast assessment: <strong>${access.color_contrast}</strong>`, `Readability: ${access.text_readability}`, guessTargetAsset("color contrast"));
+      }
+      if (access.touch_targets) {
+        createBubble("accessibility", "Touch Target Sizes", `Touch target mobile sizing is: <strong>${access.touch_targets}</strong>`, `Text Readability: ${access.text_readability}`, guessTargetAsset("touch target mobile"));
+      }
+
+      // Add hover highlights on image cards (links left to right)
+      document.querySelectorAll(".critique-asset-card").forEach(card => {
+        card.addEventListener("mouseenter", () => {
+          const key = card.getAttribute("data-asset-key");
+          card.classList.add("active");
+          // highlight matching comments
+          let firstMatch = null;
+          document.querySelectorAll(".comment-bubble").forEach(bubble => {
+            if (bubble.getAttribute("data-target-asset") === key) {
+              bubble.classList.add("active");
+              if (!firstMatch) firstMatch = bubble;
+            } else {
+              bubble.classList.remove("active");
+            }
+          });
+          if (firstMatch) {
+            firstMatch.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+        });
+
+        card.addEventListener("mouseleave", () => {
+          card.classList.remove("active");
+          document.querySelectorAll(".comment-bubble").forEach(b => b.classList.remove("active"));
+        });
+      });
+
+    } else {
+      assetsColumn.innerHTML = '<div class="sub-description" style="text-align: center; padding: 40px 0; width:100%;">No visual assets could be loaded for split-screen audit.</div>';
+      commentsColumn.innerHTML = '<div class="sub-description" style="text-align: center; padding: 40px 0; width:100%;">No visual comments generated.</div>';
+    }
 
     // What Works Well List
     const worksWellContainer = document.getElementById("works-well-list");
