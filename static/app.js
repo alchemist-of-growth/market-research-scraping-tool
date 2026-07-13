@@ -675,32 +675,7 @@ document.addEventListener("DOMContentLoaded", () => {
       priorityContainer.innerHTML = '<li style="color: var(--text-muted);">No priority recommendations recorded.</li>';
     }
     
-    // Visual Graphics images
-    const assetsContainer = document.getElementById("assets-preview-container");
-    assetsContainer.innerHTML = "";
-    const images = data.images || {};
-    
-    // We render previews for logo and hero image if URLs were scraped
-    for (const [key, imgUrl] of Object.entries(images)) {
-      if (imgUrl) {
-        const card = document.createElement("div");
-        card.className = "asset-preview-card";
-        card.innerHTML = `
-          <div class="asset-preview-title">${key.replace("_", " ")}</div>
-          <div class="asset-image-box">
-            <img src="${imgUrl}" alt="${key} branding asset" crossorigin="anonymous">
-          </div>
-        `;
-        assetsContainer.appendChild(card);
-      }
-    }
-    if (assetsContainer.children.length === 0) {
-      assetsContainer.innerHTML = `
-        <div class="empty-history" style="grid-column: span 3;">
-          No branding asset graphics could be downloaded.
-        </div>
-      `;
-    }
+
     
     // Raw Exports Tab
     const mdOutput = generateMarkdownBrief(data);
