@@ -290,72 +290,84 @@ document.addEventListener("DOMContentLoaded", () => {
     const analysis = data.analysis || {};
     
     // Overview Tab
-    document.getElementById("overview-elevator-pitch").textContent = analysis.positioning?.elevator_pitch || "--";
+    const summary = analysis.summary || {};
+    const msgAnalysis = analysis.messaging_analysis || {};
+    const prodPos = analysis.product_positioning || {};
+    
+    document.getElementById("overview-elevator-pitch").textContent = summary.elevator_pitch || "--";
     document.getElementById("meta-domain").textContent = urlToDomain(data.url);
     document.getElementById("meta-title").textContent = data.title || "No Title Extracted";
-    document.getElementById("overview-category").textContent = analysis.positioning?.core_category || "--";
-    document.getElementById("overview-differentiation").textContent = analysis.positioning?.differentiation || "--";
+    document.getElementById("overview-primary-tagline").textContent = msgAnalysis.primary_tagline || "--";
+    document.getElementById("overview-target-audience").textContent = summary.target_audience || "--";
+    document.getElementById("overview-category-strategy").textContent = summary.category_strategy || "--";
+    document.getElementById("overview-problem-solved").textContent = msgAnalysis.problem_solved || "--";
+    document.getElementById("overview-pricing-approach").textContent = prodPos.pricing_approach || "--";
     
-    // GTM Details
-    document.getElementById("gtm-motion").textContent = analysis.gtm_strategy?.gtm_motion || "--";
-    document.getElementById("gtm-pricing").textContent = analysis.gtm_strategy?.pricing_strategy || "--";
+    // Positioning & Narrative Tab
+    const ps = analysis.positioning_statement || {};
+    document.getElementById("ps-target-audience").textContent = ps.target_audience || "--";
+    document.getElementById("ps-product-category").textContent = ps.product_category || "--";
+    document.getElementById("ps-key-benefit").textContent = ps.key_benefit || "--";
+    document.getElementById("ps-reason-to-believe").textContent = ps.reason_to_believe || "--";
     
-    // Conversion list
-    const conversionList = document.getElementById("gtm-conversion-list");
-    conversionList.innerHTML = "";
-    const tactics = analysis.gtm_strategy?.conversion_tactics || [];
-    if (tactics.length > 0) {
-      tactics.forEach(t => {
+    // Features list
+    const featuresList = document.getElementById("positioning-features-list");
+    featuresList.innerHTML = "";
+    const features = prodPos.features_emphasized || [];
+    if (features.length > 0) {
+      features.forEach(f => {
         const li = document.createElement("li");
-        li.textContent = t;
-        conversionList.appendChild(li);
+        li.textContent = f;
+        featuresList.appendChild(li);
       });
     } else {
-      conversionList.innerHTML = "<li>No specific growth/conversion loops identified.</li>";
+      featuresList.innerHTML = "<li>No featured product elements identified.</li>";
     }
     
-    // Target Personas Tab
-    const personasContainer = document.getElementById("personas-container");
-    personasContainer.innerHTML = "";
-    const personas = analysis.target_personas || [];
-    personas.forEach(p => {
-      const pCard = document.createElement("div");
-      pCard.className = "persona-card";
-      
-      let painPointsHtml = "";
-      if (Array.isArray(p.pain_points)) {
-        p.pain_points.forEach(pt => {
-          painPointsHtml += `<li>${pt}</li>`;
-        });
-      }
-      
-      pCard.innerHTML = `
-        <div class="persona-header">
-          <h3 class="persona-role">${p.role || "Target Persona"}</h3>
-          <span class="persona-meta">Strategic Profile</span>
-        </div>
-        <div class="persona-section">
-          <h4>Core Pain Points Addressed</h4>
-          <ul class="styled-list">
-            ${painPointsHtml || "<li>Pain points analysis not available.</li>"}
-          </ul>
-        </div>
-        <div class="persona-section">
-          <h4>Value Delivered</h4>
-          <p>${p.value_delivered || "--"}</p>
-        </div>
-      `;
-      personasContainer.appendChild(pCard);
-    });
+    // Differentiators list
+    const diffsList = document.getElementById("positioning-differentiators-list");
+    diffsList.innerHTML = "";
+    const diffs = prodPos.claimed_differentiators || [];
+    if (diffs.length > 0) {
+      diffs.forEach(d => {
+        const li = document.createElement("li");
+        li.textContent = d;
+        diffsList.appendChild(li);
+      });
+    } else {
+      diffsList.innerHTML = "<li>No primary differentiators extracted.</li>";
+    }
     
-    // Value Props & Messaging Tab
-    document.getElementById("messaging-hero-tagline").textContent = `"${analysis.messaging_strategy?.hero_tagline || data.title}"`;
-    document.getElementById("messaging-framework").textContent = analysis.messaging_strategy?.communication_framework || "--";
+    // Narrative Arc
+    const narrative = analysis.narrative_arc || {};
+    document.getElementById("narrative-villain").textContent = narrative.villain || "--";
+    document.getElementById("narrative-hero").textContent = narrative.hero || "--";
+    document.getElementById("narrative-transformation").textContent = narrative.transformation || "--";
+    document.getElementById("narrative-stakes").textContent = narrative.stakes || "--";
+    
+    // SWOT Grid
+    const swot = analysis.swot_analysis || {};
+    const renderSwotList = (listId, items) => {
+      const el = document.getElementById(listId);
+      el.innerHTML = "";
+      (items || []).forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        el.appendChild(li);
+      });
+      if (!items || items.length === 0) {
+        el.innerHTML = "<li>None identified.</li>";
+      }
+    };
+    renderSwotList("swot-strengths-list", swot.strengths);
+    renderSwotList("swot-weaknesses-list", swot.weaknesses);
+    renderSwotList("swot-opportunities-list", swot.opportunities);
+    renderSwotList("swot-threats-list", swot.threats);
     
     // Tone tags
     const toneContainer = document.getElementById("messaging-tone-tags");
     toneContainer.innerHTML = "";
-    const tones = analysis.messaging_strategy?.tone_of_voice || [];
+    const tones = msgAnalysis.tone_of_voice || [];
     tones.forEach(t => {
       const span = document.createElement("span");
       span.textContent = t;
@@ -365,29 +377,63 @@ document.addEventListener("DOMContentLoaded", () => {
       toneContainer.innerHTML = "<span>Analytical</span><span>Professional</span>";
     }
     
-    // Value props list
-    const valuePropsContainer = document.getElementById("value-props-container");
-    valuePropsContainer.innerHTML = "";
-    const valueProps = analysis.value_propositions || [];
-    valueProps.forEach(vp => {
+    // Messaging Themes
+    const themesContainer = document.getElementById("messaging-themes-container");
+    themesContainer.innerHTML = "";
+    const themes = msgAnalysis.messaging_themes || [];
+    themes.forEach(t => {
       const div = document.createElement("div");
       div.className = "value-prop-item";
-      
-      let featuresHtml = "";
-      const features = vp.supporting_features || [];
-      features.forEach(f => {
-        featuresHtml += `<span class="feature-tag">${f}</span>`;
-      });
-      
       div.innerHTML = `
-        <h4>${vp.title || "Value Proposition"}</h4>
-        <p>${vp.description || "--"}</p>
-        <div class="features-tags">
-          ${featuresHtml}
-        </div>
+        <h4>${t.theme || "Messaging Theme"}</h4>
+        <p>${t.description || "--"}</p>
       `;
-      valuePropsContainer.appendChild(div);
+      themesContainer.appendChild(div);
     });
+    if (themes.length === 0) {
+      themesContainer.innerHTML = '<div class="sub-description">No core messaging themes extracted.</div>';
+    }
+    
+    // Messaging Audit
+    const audit = analysis.messaging_audit || {};
+    document.getElementById("audit-clarity").textContent = audit.clarity || "--";
+    document.getElementById("audit-differentiation").textContent = audit.differentiation || "--";
+    document.getElementById("audit-proof").textContent = audit.proof || "--";
+    document.getElementById("audit-resonance").textContent = audit.resonance || "--";
+    
+    // Sales Battlecard Objections Table
+    const objectionTbody = document.getElementById("battlecard-objection-tbody");
+    objectionTbody.innerHTML = "";
+    const objections = analysis.sales_battlecard?.objection_handling || [];
+    if (objections.length > 0) {
+      objections.forEach(obj => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${obj.objection}</strong></td>
+          <td>${obj.response}</td>
+        `;
+        objectionTbody.appendChild(row);
+      });
+    } else {
+      objectionTbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">No objection playbook generated.</td></tr>';
+    }
+    
+    // Sales Battlecard Landmines Table
+    const landminesTbody = document.getElementById("battlecard-landmines-tbody");
+    landminesTbody.innerHTML = "";
+    const landmines = analysis.sales_battlecard?.landmines_to_set || [];
+    if (landmines.length > 0) {
+      landmines.forEach(lm => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${lm.question}</strong></td>
+          <td>${lm.goal}</td>
+        `;
+        landminesTbody.appendChild(row);
+      });
+    } else {
+      landminesTbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">No landmines suggested.</td></tr>';
+    }
     
     // Visual Identity Tab
     // Extracted colors
@@ -567,56 +613,115 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Markdown Report Generator ---
   function generateMarkdownBrief(data) {
     const analysis = data.analysis || {};
-    let md = `# Strategy Brief & Product Audit: ${data.title || urlToDomain(data.url)}\n`;
-    md += `**Domain:** ${data.url}\n`;
+    let md = `# Competitor Strategy Audit & Battlecard: ${data.title || urlToDomain(data.url)}\n`;
+    md += `**Target URL:** ${data.url}\n`;
+    md += `**Scraped Title:** ${data.title || "N/A"}\n`;
     md += `**Meta Description:** ${data.meta_description || "Not provided"}\n\n`;
     
-    md += `## 1. Core Positioning\n`;
-    md += `- **Elevator Pitch:** ${analysis.positioning?.elevator_pitch || "N/A"}\n`;
-    md += `- **Core Category:** ${analysis.positioning?.core_category || "N/A"}\n`;
-    md += `- **Differentiation:** ${analysis.positioning?.differentiation || "N/A"}\n\n`;
+    // Overview Section
+    const summary = analysis.summary || {};
+    const msgAnalysis = analysis.messaging_analysis || {};
+    const prodPos = analysis.product_positioning || {};
     
-    md += `## 2. Value Propositions\n`;
-    const valueProps = analysis.value_propositions || [];
-    valueProps.forEach((vp, idx) => {
-      md += `### VP ${idx + 1}: ${vp.title || "Value Proposition"}\n`;
-      md += `${vp.description || "N/A"}\n`;
-      if (Array.isArray(vp.supporting_features) && vp.supporting_features.length > 0) {
-        md += `*Supporting Features:* ${vp.supporting_features.join(", ")}\n`;
-      }
-      md += `\n`;
+    md += `## 1. Competitor Overview\n`;
+    md += `- **Elevator Pitch:** ${summary.elevator_pitch || "N/A"}\n`;
+    md += `- **Core Target Audience:** ${summary.target_audience || "N/A"}\n`;
+    md += `- **Category Strategy:** ${summary.category_strategy || "N/A"}\n`;
+    md += `- **Primary Tagline:** ${msgAnalysis.primary_tagline || "N/A"}\n`;
+    md += `- **Problem Solved:** ${msgAnalysis.problem_solved || "N/A"}\n`;
+    md += `- **Pricing Approach:** ${prodPos.pricing_approach || "N/A"}\n\n`;
+    
+    // Positioning Statement
+    const ps = analysis.positioning_statement || {};
+    md += `## 2. Reverse-Engineered Positioning Statement\n`;
+    md += `> **For** ${ps.target_audience || "[target audience]"}\n`;
+    md += `> **is the** ${ps.product_category || "[product category]"}\n`;
+    md += `> **that** ${ps.key_benefit || "[key benefit]"}\n`;
+    md += `> **because** ${ps.reason_to_believe || "[reason to believe]"}\n\n`;
+    
+    // Narrative Arc
+    const narrative = analysis.narrative_arc || {};
+    md += `## 3. Brand Storytelling & Narrative Arc\n`;
+    md += `- **The Villain (Enemy):** ${narrative.villain || "N/A"}\n`;
+    md += `- **The Hero:** ${narrative.hero || "N/A"}\n`;
+    md += `- **The Transformation:** ${narrative.transformation || "N/A"}\n`;
+    md += `- **The Stakes:** ${narrative.stakes || "N/A"}\n\n`;
+    
+    // Solution Positioning
+    md += `## 4. Product Features & Differentiators\n`;
+    md += `### Features Emphasized\n`;
+    (prodPos.features_emphasized || []).forEach(f => {
+      md += `- ${f}\n`;
     });
-    
-    md += `## 3. Target Personas\n`;
-    const personas = analysis.target_personas || [];
-    personas.forEach(p => {
-      md += `### Persona: ${p.role || "Target Profile"}\n`;
-      md += `**Value Delivered:** ${p.value_delivered || "N/A"}\n`;
-      if (Array.isArray(p.pain_points) && p.pain_points.length > 0) {
-        md += `**Pain Points Addressed:**\n`;
-        p.pain_points.forEach(pt => {
-          md += `- ${pt}\n`;
-        });
-      }
-      md += `\n`;
+    md += `\n### Claimed Differentiators\n`;
+    (prodPos.claimed_differentiators || []).forEach(d => {
+      md += `- ${d}\n`;
     });
+    md += `\n`;
     
-    md += `## 4. Go-To-Market & Conversion\n`;
-    md += `- **GTM Motion:** ${analysis.gtm_strategy?.gtm_motion || "N/A"}\n`;
-    md += `- **Pricing Summary:** ${analysis.gtm_strategy?.pricing_strategy || "N/A"}\n`;
-    if (Array.isArray(analysis.gtm_strategy?.conversion_tactics) && analysis.gtm_strategy.conversion_tactics.length > 0) {
-      md += `**Key Conversion Tactics:**\n`;
-      analysis.gtm_strategy.conversion_tactics.forEach(ct => {
-        md += `- ${ct}\n`;
+    // SWOT
+    const swot = analysis.swot_analysis || {};
+    md += `## 5. SWOT Analysis\n\n`;
+    md += `### Strengths (Competitor)\n`;
+    (swot.strengths || []).forEach(s => { md += `- ${s}\n`; });
+    md += `\n### Weaknesses (Competitor)\n`;
+    (swot.weaknesses || []).forEach(w => { md += `- ${w}\n`; });
+    md += `\n### Opportunities (For You)\n`;
+    (swot.opportunities || []).forEach(o => { md += `- ${o}\n`; });
+    md += `\n### Threats (To You)\n`;
+    (swot.threats || []).forEach(t => { md += `- ${t}\n`; });
+    md += `\n`;
+    
+    // Messaging Themes & Audit
+    md += `## 6. Messaging Themes & Quality Audit\n\n`;
+    md += `### Core Messaging Themes\n`;
+    (msgAnalysis.messaging_themes || []).forEach(t => {
+      md += `* **${t.theme}:** ${t.description}\n`;
+    });
+    md += `\n### Tone of Voice\n`;
+    md += `${(msgAnalysis.tone_of_voice || []).join(", ") || "N/A"}\n\n`;
+    
+    const audit = analysis.messaging_audit || {};
+    md += `### Messaging Quality Audit\n`;
+    md += `- **Clarity:** ${audit.clarity || "N/A"}\n`;
+    md += `- **Differentiation:** ${audit.differentiation || "N/A"}\n`;
+    md += `- **Proof & Evidence:** ${audit.proof || "N/A"}\n`;
+    md += `- **Resonance:** ${audit.resonance || "N/A"}\n\n`;
+    
+    // Sales Battlecard
+    md += `## 7. Sales Battlecard (Against this Competitor)\n\n`;
+    md += `### Objection Handling Playbook\n`;
+    md += `| Prospect Objection / Competitor Claim | Sales Response Playbook |\n`;
+    md += `|---------------------------------------|-------------------------|\n`;
+    const objections = analysis.sales_battlecard?.objection_handling || [];
+    if (objections.length > 0) {
+      objections.forEach(obj => {
+        md += `| ${obj.objection} | ${obj.response} |\n`;
       });
+    } else {
+      md += `| N/A | N/A |\n`;
     }
     md += `\n`;
     
-    const critique = analysis.design_critique || {};
-    md += `## 5. Design Critique & Visual Branding\n\n`;
+    md += `### Landmines to Set\n`;
+    md += `| Landmine Question to Suggest | Strategic Goal / Why Ask It |\n`;
+    md += `|------------------------------|----------------------------|\n`;
+    const landmines = analysis.sales_battlecard?.landmines_to_set || [];
+    if (landmines.length > 0) {
+      landmines.forEach(lm => {
+        md += `| ${lm.question} | ${lm.goal} |\n`;
+      });
+    } else {
+      md += `| N/A | N/A |\n`;
+    }
+    md += `\n`;
     
-    md += `### Overall Impression\n`;
-    md += `${critique.overall_impression || "N/A"}\n\n`;
+    // Design Critique
+    const critique = analysis.design_critique || {};
+    md += `## 8. Design Critique & Visual Audit\n\n`;
+    md += `- **Overall Impression:** ${critique.overall_impression || "N/A"}\n`;
+    md += `- **Visual Theme:** ${critique.visual_theme || "N/A"}\n`;
+    md += `- **Color Palette Feedback:** ${critique.color_palette_feedback || "N/A"}\n\n`;
     
     md += `### Usability Audit\n`;
     md += `| Finding | Severity | Recommendation |\n`;
@@ -631,50 +736,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     md += `\n`;
     
-    md += `### Visual Hierarchy & Flow\n`;
+    md += `### Visual Hierarchy & Accessibility\n`;
     const vh = critique.visual_hierarchy || {};
-    md += `- **What draws the eye first:** ${vh.first_impression || "N/A"}\n`;
-    md += `- **Is this correct?** ${vh.is_first_impression_correct || "N/A"}\n`;
-    md += `- **Reading flow pattern:** ${vh.reading_flow || "N/A"}\n`;
-    md += `- **Emphasis critique:** ${vh.emphasis_critique || "N/A"}\n\n`;
-    
-    md += `### Consistency Audit\n`;
-    md += `| Design Element | Inconsistency Observed | Recommendation |\n`;
-    md += `|----------------|------------------------|----------------|\n`;
-    const consistency = critique.consistency_findings || [];
-    if (consistency.length > 0) {
-      consistency.forEach(item => {
-        md += `| ${item.element} | ${item.issue} | ${item.recommendation} |\n`;
-      });
-    } else {
-      md += `| No consistency issues found | N/A | N/A |\n`;
-    }
-    md += `\n`;
-    
-    md += `### Accessibility Feedback\n`;
-    const access = critique.accessibility || {};
-    md += `- **Color Contrast:** ${access.color_contrast || "N/A"}\n`;
-    md += `- **Touch Targets (Mobile):** ${access.touch_targets || "N/A"}\n`;
-    md += `- **Text Readability:** ${access.text_readability || "N/A"}\n\n`;
-    
-    md += `### Brand Visual Theme & Palette\n`;
-    md += `- **Visual Theme:** ${critique.visual_theme || "N/A"}\n`;
-    md += `- **Color Palette Feedback:** ${critique.color_palette_feedback || "N/A"}\n\n`;
-    
-    md += `### What Works Well\n`;
-    const worksWell = critique.what_works_well || [];
-    worksWell.forEach(item => {
-      md += `- ${item}\n`;
-    });
-    md += `\n`;
-    
-    md += `### Priority Recommendations\n`;
-    const priorities = critique.priority_recommendations || [];
-    priorities.forEach((item, idx) => {
-      const cleaned = item.replace(/^\d+[\.\s]*/, "");
-      md += `${idx + 1}. **${cleaned}**\n`;
-    });
-    md += `\n`;
+    md += `- **First Impression:** ${vh.first_impression || "N/A"}\n`;
+    md += `- **Is Focus Correct?** ${vh.is_first_impression_correct || "N/A"}\n`;
+    md += `- **Reading Flow:** ${vh.reading_flow || "N/A"}\n`;
+    md += `- **Contrast:** ${critique.accessibility?.color_contrast || "N/A"}\n`;
+    md += `- **Mobile Touch Targets:** ${critique.accessibility?.touch_targets || "N/A"}\n`;
+    md += `- **Readability:** ${critique.accessibility?.text_readability || "N/A"}\n\n`;
     
     return md;
   }

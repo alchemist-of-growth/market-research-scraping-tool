@@ -131,23 +131,25 @@
       <section id="results-stage" class="content-stage">
         
         <!-- Results Tabs Navigation -->
+        <!-- Results Tabs Navigation -->
         <div class="tabs-nav">
-          <button class="tab-btn active" data-tab="tab-overview">Overview & GTM</button>
-          <button class="tab-btn" data-tab="tab-personas">Target Personas</button>
-          <button class="tab-btn" data-tab="tab-messaging">Value Props & Messaging</button>
-          <button class="tab-btn" data-tab="tab-visuals">Visual Identity</button>
+          <button class="tab-btn active" data-tab="tab-overview">Overview</button>
+          <button class="tab-btn" data-tab="tab-positioning">Positioning & Narrative</button>
+          <button class="tab-btn" data-tab="tab-swot">SWOT & Audit</button>
+          <button class="tab-btn" data-tab="tab-battlecard">Sales Battlecard</button>
+          <button class="tab-btn" data-tab="tab-visuals">Visuals & Critique</button>
           <button class="tab-btn" data-tab="tab-exports">Raw Exports</button>
         </div>
 
         <!-- Tab Contents -->
         <div class="tabs-container">
           
-          <!-- Tab 1: Overview & GTM -->
+          <!-- Tab 1: Competitor Overview -->
           <div id="tab-overview" class="tab-content active">
             <div class="results-grid">
               
               <div class="card card-wide bg-gradient-brand">
-                <div class="card-tag">Core Pitch</div>
+                <div class="card-tag">Elevator Pitch</div>
                 <h3 id="overview-elevator-pitch" class="headline-large">--</h3>
                 <div class="meta-info-strip">
                   <div><strong>Target Domain:</strong> <span id="meta-domain">--</span></div>
@@ -156,73 +158,184 @@
               </div>
 
               <div class="card">
-                <h3>Core Category</h3>
-                <p id="overview-category" class="content-highlight">--</p>
-                <p class="sub-description">The market segment or product space this landing page claims dominance in.</p>
+                <h3>Primary Tagline</h3>
+                <p id="overview-primary-tagline" class="content-highlight">--</p>
               </div>
 
               <div class="card">
-                <h3>Market Differentiation</h3>
-                <p id="overview-differentiation">--</p>
+                <h3>Core Target Audience</h3>
+                <p id="overview-target-audience">--</p>
+              </div>
+
+              <div class="card">
+                <h3>Category Strategy</h3>
+                <p id="overview-category-strategy">--</p>
+              </div>
+
+              <div class="card">
+                <h3>Problem Solved</h3>
+                <p id="overview-problem-solved">--</p>
               </div>
 
               <div class="card card-wide">
-                <h3>Go-To-Market & Pricing Strategy</h3>
-                <div class="gtm-details-grid">
-                  <div>
-                    <h4>GTM Motion</h4>
-                    <p id="gtm-motion" class="badge">--</p>
-                    <p class="detail-explanation">Calculated sales funnel structure (e.g. self-serve, enterprise, developer-first).</p>
-                  </div>
-                  <div>
-                    <h4>Pricing Structure</h4>
-                    <p id="gtm-pricing">--</p>
-                  </div>
+                <h3>Pricing Approach</h3>
+                <p id="overview-pricing-approach" class="sub-description">--</p>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Tab 2: Positioning & Narrative -->
+          <div id="tab-positioning" class="tab-content">
+            <div class="results-grid">
+              
+              <div class="card card-wide">
+                <div class="card-tag">Reverse-Engineered Positioning Statement</div>
+                <div class="positioning-statement-builder">
+                  <div class="ps-block"><span class="ps-label">For:</span> <span id="ps-target-audience">--</span></div>
+                  <div class="ps-block"><span class="ps-label">is the:</span> <span id="ps-product-category">--</span></div>
+                  <div class="ps-block"><span class="ps-label">that:</span> <span id="ps-key-benefit">--</span></div>
+                  <div class="ps-block"><span class="ps-label">because:</span> <span id="ps-reason-to-believe">--</span></div>
                 </div>
               </div>
 
-              <div class="card card-wide">
-                <h3>Conversion Tactics & Growth Loops</h3>
-                <ul id="gtm-conversion-list" class="styled-list">
+              <div class="card">
+                <h3>Features Emphasized</h3>
+                <ul id="positioning-features-list" class="styled-list">
                   <li>--</li>
                 </ul>
               </div>
 
+              <div class="card">
+                <h3>Claimed Differentiators</h3>
+                <ul id="positioning-differentiators-list" class="styled-list">
+                  <li>--</li>
+                </ul>
+              </div>
+
+              <div class="card card-wide bg-gradient-brand">
+                <div class="card-tag">Narrative Arc & Storytelling Structure</div>
+                <div class="narrative-grid">
+                  <div class="narrative-node">
+                    <h5>The Villain / Enemy</h5>
+                    <p id="narrative-villain">--</p>
+                  </div>
+                  <div class="narrative-node">
+                    <h5>The Hero</h5>
+                    <p id="narrative-hero">--</p>
+                  </div>
+                  <div class="narrative-node">
+                    <h5>The Transformation</h5>
+                    <p id="narrative-transformation">--</p>
+                  </div>
+                  <div class="narrative-node">
+                    <h5>The Stakes</h5>
+                    <p id="narrative-stakes">--</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
-          <!-- Tab 2: Target Personas -->
-          <div id="tab-personas" class="tab-content">
-            <div id="personas-container" class="personas-grid">
-              <!-- Dynamically populated persona cards -->
-            </div>
-          </div>
-
-          <!-- Tab 3: Value Props & Messaging -->
-          <div id="tab-messaging" class="tab-content">
+          <!-- Tab 3: SWOT & Audit -->
+          <div id="tab-swot" class="tab-content">
             <div class="results-grid">
               
               <div class="card card-wide">
-                <div class="card-tag">Reverse-Engineered Tagline</div>
-                <h2 id="messaging-hero-tagline" class="tagline-large">--</h2>
-              </div>
-
-              <div class="card">
-                <h3>Tone of Voice</h3>
-                <div id="messaging-tone-tags" class="tag-cloud">
-                  <!-- Tone tags go here -->
+                <h3>SWOT Grid</h3>
+                <div class="swot-layout-grid">
+                  <div class="swot-quadrant swot-s">
+                    <div class="swot-title">Strengths (Competitor)</div>
+                    <ul id="swot-strengths-list" class="styled-list"></ul>
+                  </div>
+                  <div class="swot-quadrant swot-w">
+                    <div class="swot-title">Weaknesses (Competitor)</div>
+                    <ul id="swot-weaknesses-list" class="styled-list"></ul>
+                  </div>
+                  <div class="swot-quadrant swot-o">
+                    <div class="swot-title">Opportunities (For You)</div>
+                    <ul id="swot-opportunities-list" class="styled-list"></ul>
+                  </div>
+                  <div class="swot-quadrant swot-t">
+                    <div class="swot-title">Threats (To You)</div>
+                    <ul id="swot-threats-list" class="styled-list"></ul>
+                  </div>
                 </div>
               </div>
 
               <div class="card">
-                <h3>Communication Framework</h3>
-                <p id="messaging-framework">--</p>
+                <h3>Tone of Voice</h3>
+                <div id="messaging-tone-tags" class="tag-cloud"></div>
+              </div>
+
+              <div class="card">
+                <h3>Core Messaging Themes</h3>
+                <div id="messaging-themes-container" class="value-props-list"></div>
               </div>
 
               <div class="card card-wide">
-                <h3>Core Value Propositions</h3>
-                <div id="value-props-container" class="value-props-list">
-                  <!-- Value propositions list -->
+                <h3>Messaging Quality Audit</h3>
+                <div class="audit-matrix-grid">
+                  <div class="audit-node">
+                    <h5>Clarity</h5>
+                    <p id="audit-clarity">--</p>
+                  </div>
+                  <div class="audit-node">
+                    <h5>Differentiation</h5>
+                    <p id="audit-differentiation">--</p>
+                  </div>
+                  <div class="audit-node">
+                    <h5>Proof & Evidence</h5>
+                    <p id="audit-proof">--</p>
+                  </div>
+                  <div class="audit-node">
+                    <h5>Resonance</h5>
+                    <p id="audit-resonance">--</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Tab 4: Sales Battlecard -->
+          <div id="tab-battlecard" class="tab-content">
+            <div class="results-grid">
+              
+              <div class="card card-wide bg-gradient-brand">
+                <div class="card-tag">Objection Handling Framework</div>
+                <p class="section-instruction">Actionable response plays to use when customers raise objections comparing you to this competitor.</p>
+                <div class="table-container">
+                  <table class="critique-table">
+                    <thead>
+                      <tr>
+                        <th>Prospect Objection / Competitor Claim</th>
+                        <th>Sales Response Playbook</th>
+                      </tr>
+                    </thead>
+                    <tbody id="battlecard-objection-tbody">
+                      <!-- Dynamic rows -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card card-wide">
+                <h3>Landmines to Set</h3>
+                <p class="section-instruction">Suggest these questions to prospects to highlight the competitor's structural shortcomings.</p>
+                <div class="table-container">
+                  <table class="critique-table">
+                    <thead>
+                      <tr>
+                        <th>Landmine Question to Suggest</th>
+                        <th>Strategic Goal / Why Ask It</th>
+                      </tr>
+                    </thead>
+                    <tbody id="battlecard-landmines-tbody">
+                      <!-- Dynamic rows -->
+                    </tbody>
+                  </table>
                 </div>
               </div>
 

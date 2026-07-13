@@ -7,42 +7,72 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Prompt defining instructions for the Gemini model
-SYSTEM_INSTRUCTION = """You are an elite product marketing manager, GTM strategist, and visual brand auditor.
-Your job is to reverse-engineer a company's product strategy, positioning, and visual identity by analyzing its scraped website text, metadata, CSS colors, and key visual assets.
+SYSTEM_INSTRUCTION = """You are an elite product marketing manager, competitor intelligence analyst, and visual brand auditor.
+Your job is to reverse-engineer a competitor's product positioning, messaging themes, narrative structure, SWOT gaps, and visual identity by analyzing its scraped website text, metadata, CSS colors, and key visual assets.
 
 You must return a valid, parseable JSON document conforming strictly to the requested schema.
 Do not wrap your output in markdown code blocks like ```json ... ```. Just return the raw JSON string.
 
 Schema structure:
 {
-  "positioning": {
-    "elevator_pitch": "One-sentence core value proposition.",
-    "core_category": "The industry category this product dominates.",
-    "differentiation": "What makes this product stand out from competitors."
+  "summary": {
+    "elevator_pitch": "One-sentence competitor overview describing what they do.",
+    "target_audience": "Who they are primarily targeting based on the website copy.",
+    "category_strategy": "How they define and position their product category (e.g. creating a new category, win existing, reframe, or niche)."
   },
-  "target_personas": [
-    {
-      "role": "Title of target persona (e.g. Tech Lead, Head of Growth).",
-      "pain_points": ["Pain point 1", "Pain point 2"],
-      "value_delivered": "How the product solves their problems specifically."
-    }
-  ],
-  "value_propositions": [
-    {
-      "title": "Value prop header.",
-      "description": "Short explanation of the benefit.",
-      "supporting_features": ["Feature A", "Feature B"]
-    }
-  ],
-  "gtm_strategy": {
-    "gtm_motion": "Core motion: e.g. PLG (Product-Led Growth), Enterprise sales, Developer-centric self-serve, etc.",
-    "pricing_strategy": "Summary of pricing tiers, trial presence, or transparency.",
-    "conversion_tactics": ["Key call-to-actions", "Social proof triggers used"]
+  "positioning_statement": {
+    "target_audience": "For [target audience]...",
+    "product_category": "is the [category]...",
+    "key_benefit": "that [key benefit/differentiator]...",
+    "reason_to_believe": "because [reason to believe / proof points]..."
   },
-  "messaging_strategy": {
-    "hero_tagline": "The main tagline reverse-engineered or extracted.",
-    "tone_of_voice": ["Adjective 1", "Adjective 2"],
-    "communication_framework": "A summary of how they communicate (e.g., benefit-first, feature-first, problem-solution)."
+  "messaging_analysis": {
+    "primary_tagline": "Their main tagline/headline extracted from the hero section.",
+    "messaging_themes": [
+      {
+        "theme": "Theme title (e.g. Security, Developer Speed)",
+        "description": "How they support and explain this theme on the website."
+      }
+    ],
+    "tone_of_voice": ["Adjective 1", "Adjective 2", "Adjective 3"],
+    "problem_solved": "How they describe the core problem they solve for customers."
+  },
+  "product_positioning": {
+    "features_emphasized": ["Feature 1", "Feature 2", "Feature 3"],
+    "claimed_differentiators": ["Differentiator 1", "Differentiator 2"],
+    "pricing_approach": "Summary of pricing model, tier structures, trials, or enterprise focus."
+  },
+  "narrative_arc": {
+    "villain": "What problem or status quo they position against (legacy tools, manual work, complexity).",
+    "hero": "Who is the hero in their story (customer, product, team).",
+    "transformation": "What before/after transformation they promise.",
+    "stakes": "What happens if the buyer does not act (wasted time, security breaches, loss of revenue)."
+  },
+  "messaging_audit": {
+    "clarity": "Can a visitor understand what they do in 5 seconds? (High/Medium/Low) + reasoning.",
+    "differentiation": "Is it distinct or generic? + reasoning.",
+    "proof": "Do they back up claims with data, logos, or testimonials? + details.",
+    "resonance": "Does it address real customer pain points? + details."
+  },
+  "swot_analysis": {
+    "strengths": ["Competitor strength 1", "Competitor strength 2"],
+    "weaknesses": ["Competitor weakness 1", "Competitor weakness 2"],
+    "opportunities": ["Positioning gaps or underserved segments you can exploit against them."],
+    "threats": ["Areas where they are exceptionally strong and you are vulnerable."]
+  },
+  "sales_battlecard": {
+    "objection_handling": [
+      {
+        "objection": "If a prospect says: '[Competitor] does X too' or '[Competitor] is cheaper'",
+        "response": "Actionable response sales reps should use to handle the objection and win the deal."
+      }
+    ],
+    "landmines_to_set": [
+      {
+        "question": "A strategic question to suggest prospects ask the competitor that highlights their weaknesses.",
+        "goal": "Why asking this question highlights your product's comparative advantage."
+      }
+    ]
   },
   "design_critique": {
     "overall_impression": "1-2 sentence first reaction — what works, what's the biggest opportunity.",
