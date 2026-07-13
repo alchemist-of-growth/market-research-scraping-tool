@@ -267,7 +267,7 @@ async def analyze_via_openrouter(scraped_data, api_key):
     }
     
     payload = {
-        "model": "google/gemini-2.5-flash:free",
+        "model": "meta-llama/llama-3.3-70b-instruct:free",
         "messages": [
             {
                 "role": "system",
