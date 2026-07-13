@@ -430,10 +430,94 @@ document.addEventListener("DOMContentLoaded", () => {
       cssVarsContainer.innerHTML = '<div class="sub-description" style="text-align: center;">No CSS variable declarations extracted.</div>';
     }
     
-    // Critique text fields
-    document.getElementById("visuals-theme").textContent = analysis.design_branding?.visual_theme || "--";
-    document.getElementById("visuals-feedback").textContent = analysis.design_branding?.color_palette_feedback || "--";
-    document.getElementById("visuals-ux-critique").textContent = analysis.design_branding?.ux_ui_critique || "--";
+    // Critique text fields and Overall Impression
+    const critique = analysis.design_critique || {};
+    document.getElementById("critique-overall-impression").textContent = critique.overall_impression || "--";
+    document.getElementById("visuals-theme").textContent = critique.visual_theme || "--";
+    document.getElementById("visuals-feedback").textContent = critique.color_palette_feedback || "--";
+
+    // Usability Findings Table
+    const usabilityTbody = document.getElementById("usability-tbody");
+    usabilityTbody.innerHTML = "";
+    const usabilityFindings = critique.usability_findings || [];
+    if (usabilityFindings.length > 0) {
+      usabilityFindings.forEach(item => {
+        const row = document.createElement("tr");
+        let badgeClass = "minor";
+        const sev = (item.severity || "").toLowerCase();
+        if (item.severity.includes("🔴") || sev.includes("critical")) badgeClass = "critical";
+        else if (item.severity.includes("🟡") || sev.includes("moderate")) badgeClass = "moderate";
+        
+        row.innerHTML = `
+          <td><strong>${item.issue}</strong></td>
+          <td><span class="severity-badge ${badgeClass}">${item.severity}</span></td>
+          <td>${item.recommendation}</td>
+        `;
+        usabilityTbody.appendChild(row);
+      });
+    } else {
+      usabilityTbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No usability issues identified.</td></tr>';
+    }
+
+    // Visual Hierarchy details
+    const vh = critique.visual_hierarchy || {};
+    document.getElementById("critique-first-impression").textContent = vh.first_impression || "--";
+    document.getElementById("critique-is-first-correct").textContent = vh.is_first_impression_correct || "--";
+    document.getElementById("critique-reading-flow").textContent = vh.reading_flow || "--";
+    document.getElementById("critique-emphasis").textContent = vh.emphasis_critique || "--";
+
+    // Consistency Findings Table
+    const consistencyTbody = document.getElementById("consistency-tbody");
+    consistencyTbody.innerHTML = "";
+    const consistencyFindings = critique.consistency_findings || [];
+    if (consistencyFindings.length > 0) {
+      consistencyFindings.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${item.element}</strong></td>
+          <td>${item.issue}</td>
+          <td>${item.recommendation}</td>
+        `;
+        consistencyTbody.appendChild(row);
+      });
+    } else {
+      consistencyTbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No design consistency issues identified.</td></tr>';
+    }
+
+    // Accessibility details
+    const access = critique.accessibility || {};
+    document.getElementById("critique-contrast").textContent = access.color_contrast || "--";
+    document.getElementById("critique-touch").textContent = access.touch_targets || "--";
+    document.getElementById("critique-readability").textContent = access.text_readability || "--";
+
+    // What Works Well List
+    const worksWellContainer = document.getElementById("works-well-list");
+    worksWellContainer.innerHTML = "";
+    const worksWell = critique.what_works_well || [];
+    if (worksWell.length > 0) {
+      worksWell.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        worksWellContainer.appendChild(li);
+      });
+    } else {
+      worksWellContainer.innerHTML = '<li style="color: var(--text-muted);">No positive observations recorded.</li>';
+    }
+
+    // Priority Recommendations List
+    const priorityContainer = document.getElementById("priority-recommendations-list");
+    priorityContainer.innerHTML = "";
+    const priorities = critique.priority_recommendations || [];
+    if (priorities.length > 0) {
+      priorities.forEach(item => {
+        const cleanedItem = item.replace(/^\d+[\.\s]*/, "");
+        const li = document.createElement("li");
+        li.innerHTML = `<p>${cleanedItem}</p>`;
+        priorityContainer.appendChild(li);
+      });
+    } else {
+      priorityContainer.innerHTML = '<li style="color: var(--text-muted);">No priority recommendations recorded.</li>';
+    }
     
     // Visual Graphics images
     const assetsContainer = document.getElementById("assets-preview-container");
@@ -528,10 +612,69 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     md += `\n`;
     
-    md += `## 5. Visual Branding & Design System\n`;
-    md += `- **Visual Theme:** ${analysis.design_branding?.visual_theme || "N/A"}\n`;
-    md += `- **Color Palette Feedback:** ${analysis.design_branding?.color_palette_feedback || "N/A"}\n`;
-    md += `- **UX / UI Critique:** ${analysis.design_branding?.ux_ui_critique || "N/A"}\n`;
+    const critique = analysis.design_critique || {};
+    md += `## 5. Design Critique & Visual Branding\n\n`;
+    
+    md += `### Overall Impression\n`;
+    md += `${critique.overall_impression || "N/A"}\n\n`;
+    
+    md += `### Usability Audit\n`;
+    md += `| Finding | Severity | Recommendation |\n`;
+    md += `|---------|----------|----------------|\n`;
+    const usability = critique.usability_findings || [];
+    if (usability.length > 0) {
+      usability.forEach(item => {
+        md += `| ${item.issue} | ${item.severity} | ${item.recommendation} |\n`;
+      });
+    } else {
+      md += `| No usability issues found | Minor | N/A |\n`;
+    }
+    md += `\n`;
+    
+    md += `### Visual Hierarchy & Flow\n`;
+    const vh = critique.visual_hierarchy || {};
+    md += `- **What draws the eye first:** ${vh.first_impression || "N/A"}\n`;
+    md += `- **Is this correct?** ${vh.is_first_impression_correct || "N/A"}\n`;
+    md += `- **Reading flow pattern:** ${vh.reading_flow || "N/A"}\n`;
+    md += `- **Emphasis critique:** ${vh.emphasis_critique || "N/A"}\n\n`;
+    
+    md += `### Consistency Audit\n`;
+    md += `| Design Element | Inconsistency Observed | Recommendation |\n`;
+    md += `|----------------|------------------------|----------------|\n`;
+    const consistency = critique.consistency_findings || [];
+    if (consistency.length > 0) {
+      consistency.forEach(item => {
+        md += `| ${item.element} | ${item.issue} | ${item.recommendation} |\n`;
+      });
+    } else {
+      md += `| No consistency issues found | N/A | N/A |\n`;
+    }
+    md += `\n`;
+    
+    md += `### Accessibility Feedback\n`;
+    const access = critique.accessibility || {};
+    md += `- **Color Contrast:** ${access.color_contrast || "N/A"}\n`;
+    md += `- **Touch Targets (Mobile):** ${access.touch_targets || "N/A"}\n`;
+    md += `- **Text Readability:** ${access.text_readability || "N/A"}\n\n`;
+    
+    md += `### Brand Visual Theme & Palette\n`;
+    md += `- **Visual Theme:** ${critique.visual_theme || "N/A"}\n`;
+    md += `- **Color Palette Feedback:** ${critique.color_palette_feedback || "N/A"}\n\n`;
+    
+    md += `### What Works Well\n`;
+    const worksWell = critique.what_works_well || [];
+    worksWell.forEach(item => {
+      md += `- ${item}\n`;
+    });
+    md += `\n`;
+    
+    md += `### Priority Recommendations\n`;
+    const priorities = critique.priority_recommendations || [];
+    priorities.forEach((item, idx) => {
+      const cleaned = item.replace(/^\d+[\.\s]*/, "");
+      md += `${idx + 1}. **${cleaned}**\n`;
+    });
+    md += `\n`;
     
     return md;
   }

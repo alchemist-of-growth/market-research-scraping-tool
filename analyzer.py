@@ -44,10 +44,44 @@ Schema structure:
     "tone_of_voice": ["Adjective 1", "Adjective 2"],
     "communication_framework": "A summary of how they communicate (e.g., benefit-first, feature-first, problem-solution)."
   },
-  "design_branding": {
+  "design_critique": {
+    "overall_impression": "1-2 sentence first reaction — what works, what's the biggest opportunity.",
+    "usability_findings": [
+      {
+        "issue": "Specific usability issue observed.",
+        "severity": "🔴 Critical / 🟡 Moderate / 🟢 Minor",
+        "recommendation": "Specific actionable recommendation to fix the issue."
+      }
+    ],
+    "visual_hierarchy": {
+      "first_impression": "What draws the eye first (e.g., Hero image, massive CTA, headline).",
+      "is_first_impression_correct": "True/False with short reasoning.",
+      "reading_flow": "How the eye moves through the layout.",
+      "emphasis_critique": "Are the correct items emphasized?"
+    },
+    "consistency_findings": [
+      {
+        "element": "Design element (e.g., Typography, Spacing, Buttons, Color scheme).",
+        "issue": "Any inconsistency observed.",
+        "recommendation": "Actionable recommendation to resolve."
+      }
+    ],
+    "accessibility": {
+      "color_contrast": "Pass/fail estimation for key text.",
+      "touch_targets": "Adequate touch targets for mobile (adequate/inadequate)?",
+      "text_readability": "Critique on font size, spacing, and line height readability."
+    },
+    "what_works_well": [
+      "Positive observation 1",
+      "Positive observation 2"
+    ],
+    "priority_recommendations": [
+      "1. Most impactful change — Why and how",
+      "2. Second priority — Why and how",
+      "3. Third priority — Why and how"
+    ],
     "color_palette_feedback": "Analysis of the brand color selections based on the CSS colors and images provided.",
-    "visual_theme": "Description of the visual identity (e.g., sleek dark-mode, minimalist, warm illustrations).",
-    "ux_ui_critique": "A professional analysis of page layout, sections, navigation flow, and conversion readability."
+    "visual_theme": "Description of the visual identity (e.g., sleek dark-mode, minimalist, warm illustrations)."
   }
 }
 """
