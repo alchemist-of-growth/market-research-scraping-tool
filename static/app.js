@@ -491,28 +491,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (imgKeys.length > 0) {
       // 1. Populate Assets Column
-      imgKeys.forEach(key => {
-        const card = document.createElement("div");
-        card.className = "critique-asset-card";
-        card.id = `critique-asset-${key}`;
-        card.setAttribute("data-asset-key", key);
-
-        let imgUrl = images[key];
-        if (imgUrl && imgUrl.startsWith("/static/")) {
+      const hasScreenshot = !!images.full_page_screenshot;
+      
+      if (hasScreenshot) {
+        let imgUrl = images.full_page_screenshot;
+        if (imgUrl.startsWith("/static/")) {
           imgUrl = imgUrl.substring(7);
         }
-
+        
+        const card = document.createElement("div");
+        card.className = "critique-asset-card full-page-mockup-card active";
+        card.id = "critique-asset-full_page_screenshot";
+        card.setAttribute("data-asset-key", "full_page_screenshot");
+        
         card.innerHTML = `
           <div class="critique-asset-header">
-            <strong>${key.toUpperCase().replace("_", " ")}</strong>
-            <span class="tag">Visual Target</span>
+            <strong>Full Webpage Mockup</strong>
+            <span class="tag">Active Scroll View</span>
           </div>
-          <div class="critique-asset-image-wrapper">
-            <img src="${imgUrl}" alt="${key} asset" crossorigin="anonymous">
+          <div class="critique-asset-image-wrapper full-page-image-wrapper">
+            <img src="${imgUrl}" alt="Full page screenshot mockup" crossorigin="anonymous">
           </div>
         `;
         assetsColumn.appendChild(card);
-      });
+      } else {
+        // Fallback: render individual assets as cards
+        imgKeys.forEach(key => {
+          if (key === "full_page_screenshot") return;
+          const card = document.createElement("div");
+          card.className = "critique-asset-card";
+          card.id = `critique-asset-${key}`;
+          card.setAttribute("data-asset-key", key);
+
+          let imgUrl = images[key];
+          if (imgUrl && imgUrl.startsWith("/static/")) {
+            imgUrl = imgUrl.substring(7);
+          }
+
+          card.innerHTML = `
+            <div class="critique-asset-header">
+              <strong>${key.toUpperCase().replace("_", " ")}</strong>
+              <span class="tag">Visual Target</span>
+            </div>
+            <div class="critique-asset-image-wrapper">
+              <img src="${imgUrl}" alt="${key} asset" crossorigin="anonymous">
+            </div>
+          `;
+          assetsColumn.appendChild(card);
+        });
+      }
 
       // 2. Populate Comments Column with Word-Style Bubbles
       let bubbleCount = 0;
@@ -560,10 +587,42 @@ document.addEventListener("DOMContentLoaded", () => {
           document.querySelectorAll(".critique-asset-card").forEach(c => c.classList.remove("active"));
           
           bubble.classList.add("active");
-          const targetCard = document.getElementById(`critique-asset-${targetAsset}`);
-          if (targetCard) {
-            targetCard.classList.add("active");
-            targetCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          
+          if (hasScreenshot) {
+            const mockupCard = document.getElementById("critique-asset-full_page_screenshot");
+            if (mockupCard) {
+              mockupCard.classList.add("active");
+              
+              // Calculate target scroll height based on comment keywords & type
+              let scrollRatio = 0.0; // Hero
+              const t = type.toLowerCase();
+              const bText = (body + " " + title).toLowerCase();
+              
+              if (bText.includes("footer") || bText.includes("copyright") || bText.includes("bottom")) {
+                scrollRatio = 1.0;
+              } else if (t === "accessibility" || bText.includes("accessibility") || bText.includes("contrast") || bText.includes("touch")) {
+                scrollRatio = 0.75;
+              } else if (t === "consistency" || bText.includes("font") || bText.includes("style") || bText.includes("align")) {
+                scrollRatio = 0.50;
+              } else if (bText.includes("flow") || bText.includes("reading") || bText.includes("hierarchy") || bText.includes("first impression")) {
+                scrollRatio = 0.25;
+              }
+              
+              const imgWrapper = mockupCard.querySelector(".critique-asset-image-wrapper");
+              if (imgWrapper) {
+                const targetScrollY = (imgWrapper.scrollHeight - imgWrapper.clientHeight) * scrollRatio;
+                imgWrapper.scrollTo({
+                  top: targetScrollY,
+                  behavior: "smooth"
+                });
+              }
+            }
+          } else {
+            const targetCard = document.getElementById(`critique-asset-${targetAsset}`);
+            if (targetCard) {
+              targetCard.classList.add("active");
+              targetCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
           }
         });
 

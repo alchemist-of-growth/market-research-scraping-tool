@@ -254,6 +254,34 @@ async def scrape_product_page(url):
             if img_data:
                 scraped_images[img_name] = img_data
                 
+        # Capture full page screenshot via Microlink cloud API
+        import urllib.parse
+        try:
+            encoded_url = urllib.parse.quote(url)
+            screenshot_api_url = f"https://api.microlink.io?url={encoded_url}&screenshot=true&fullPage=true&meta=false&embed=screenshot.url"
+            logger.info(f"Fetching full-page screenshot from Microlink: {screenshot_api_url}")
+            
+            # Download and save full page screenshot
+            response_ss = await client.get(screenshot_api_url, headers=HEADERS, timeout=35.0, follow_redirects=True)
+            if response_ss.status_code == 200:
+                save_dir = Path("static") / "scraped_images" / domain_folder
+                save_dir.mkdir(parents=True, exist_ok=True)
+                file_path = save_dir / "screenshot.png"
+                file_path.write_bytes(response_ss.content)
+                logger.info(f"Saved full page screenshot locally: {file_path}")
+                
+                encoded = base64.b64encode(response_ss.content).decode("utf-8")
+                local_web_path = f"/scraped_images/{domain_folder}/screenshot.png"
+                
+                scraped_images["full_page_screenshot"] = {
+                    "url": screenshot_api_url,
+                    "mime_type": "image/png",
+                    "base64_data": encoded,
+                    "local_path": local_web_path
+                }
+        except Exception as e:
+            logger.warning(f"Failed to capture full-page screenshot via Microlink: {e}")
+            
         # Clean text layout summary (paragraphs limit to first 30 for token efficiency)
         scraped_data = {
             "url": url,
