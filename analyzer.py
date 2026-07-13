@@ -2,6 +2,7 @@ import os
 import json
 import base64
 import google.generativeai as genai
+import httpx
 import logging
 
 logger = logging.getLogger(__name__)
@@ -155,6 +156,10 @@ async def analyze_website_strategy(scraped_data, custom_api_key=None):
     if not api_key:
         raise Exception("Gemini API key is not configured. Please set it in Settings (UI) or environment variables.")
         
+    # Auto-detect OpenRouter API Key prefix
+    if api_key.startswith("sk-or-"):
+        return await analyze_via_openrouter(scraped_data, api_key)
+        
     genai.configure(api_key=api_key)
     
     # We use gemini-3.1-flash-lite as it is highly efficient, multimodal, and has JSON mode support
@@ -217,3 +222,88 @@ async def analyze_website_strategy(scraped_data, custom_api_key=None):
     except Exception as e:
         logger.error(f"Gemini generation error: {e}")
         raise Exception(f"Failed to analyze product strategy via Gemini: {e}")
+
+async def analyze_via_openrouter(scraped_data, api_key):
+    """Sends website data and image assets to OpenRouter using Gemini 2.5 Flash Free model."""
+    logger.info("Routing request to OpenRouter using google/gemini-2.5-flash:free")
+    
+    # 1. Prepare system instruction and user prompt
+    prompt_text = generate_analysis_prompt(scraped_data)
+    
+    # 2. Build content array for user message
+    content_parts = [
+        {
+            "type": "text",
+            "text": prompt_text
+        }
+    ]
+    
+    # 3. Add base64 images to content parts
+    images = scraped_data.get("images", {})
+    for img_name, img_info in images.items():
+        try:
+            mime_type = img_info.get("mime_type", "image/png")
+            if "svg" in mime_type.lower():
+                continue
+            base64_data = img_info.get("base64_data", "")
+            if base64_data:
+                content_parts.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{mime_type};base64,{base64_data}"
+                    }
+                })
+                logger.info(f"Appended image {img_name} to OpenRouter payload.")
+        except Exception as e:
+            logger.error(f"Failed to process image {img_name} for OpenRouter: {e}")
+            
+    # 4. Make HTTP request to OpenRouter API
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/alchemist-of-growth/market-research-scraping-tool",
+        "X-Title": "Market Research Scraping Tool"
+    }
+    
+    payload = {
+        "model": "google/gemini-2.5-flash:free",
+        "messages": [
+            {
+                "role": "system",
+                "content": SYSTEM_INSTRUCTION
+            },
+            {
+                "role": "user",
+                "content": content_parts
+            }
+        ],
+        "response_format": {
+            "type": "json_object"
+        },
+        "temperature": 0.2
+    }
+    
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            logger.error(f"OpenRouter API error: {response.status_code} - {response.text}")
+            raise Exception(f"OpenRouter returned error: {response.text}")
+            
+        result = response.json()
+        try:
+            response_text = result["choices"][0]["message"]["content"].strip()
+            
+            # Clean outer braces
+            first_brace = response_text.find('{')
+            last_brace = response_text.rfind('}')
+            if first_brace != -1 and last_brace != -1:
+                json_content = response_text[first_brace:last_brace+1]
+            else:
+                json_content = response_text
+                
+            parsed_json = json.loads(json_content)
+            return parsed_json
+        except Exception as parse_err:
+            logger.error(f"Failed to parse OpenRouter JSON: {parse_err}. Raw response text:\n{response_text}")
+            raise Exception(f"Failed to parse OpenRouter response: {parse_err}")
