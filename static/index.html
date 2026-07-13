@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IntelScrape // Product Strategy & Visual Branding Intelligence</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Sidebar for History & Key Actions -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-area">
+          <span class="logo-dot"></span>
+          <h1>IntelScrape</h1>
+        </div>
+        <p class="tagline">GTM & Visual Reverse-Engineer</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">New Analysis</div>
+        <button id="btn-new-analysis" class="btn btn-primary btn-full-width">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Analyze New URL
+        </button>
+
+        <div class="nav-section-title">Recent Audits</div>
+        <div id="history-list" class="history-list">
+          <div class="empty-history">No past analyses. Input a URL to begin.</div>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="btn-open-settings" class="btn btn-secondary btn-full-width">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Configure API Key
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div id="active-url-display" class="active-url-display">
+          <h2>Get Started</h2>
+          <p>Analyze any product website instantly</p>
+        </div>
+        <div class="user-status-badge">
+          <span class="status-indicator online"></span>
+          <span id="api-status-text">Using Server Key</span>
+        </div>
+      </header>
+
+      <!-- Input Stage -->
+      <section id="input-stage" class="content-stage active">
+        <div class="hero-intro">
+          <h2>Reverse-engineer any landing page.</h2>
+          <p>Extract branding stylesheets, key graphics, and site contents. Let Gemini reconstruct target personas, GTM playbooks, core positioning, and messaging frameworks in real time.</p>
+        </div>
+
+        <form id="analysis-form" class="url-input-card">
+          <div class="input-group">
+            <input type="text" id="target-url" placeholder="https://example.com/product" required>
+            <button type="submit" class="btn btn-action">Generate Report</button>
+          </div>
+          <p class="input-hint">For best results, use standard landing pages detailing pricing, value props, or features.</p>
+        </form>
+
+        <!-- Quick onboarding guide -->
+        <div class="onboarding-grid">
+          <div class="onboarding-card">
+            <div class="card-num">01</div>
+            <h3>Deep Visual Scrape</h3>
+            <p>Our backend extracts layout structures, logo graphics, Open Graph headers, and inline CSS colors to assess visual styling.</p>
+          </div>
+          <div class="onboarding-card">
+            <div class="card-num">02</div>
+            <h3>GTM Reverse-Engineering</h3>
+            <p>Using the Google Gemini model, we break down messaging taglines, growth loops, and target audiences from page hierarchy.</p>
+          </div>
+          <div class="onboarding-card">
+            <div class="card-num">03</div>
+            <h3>Fully Exportable Outputs</h3>
+            <p>Directly copy or download findings as standard Markdown reports or JSON schemas for strategic operations.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Loading Stage -->
+      <section id="loading-stage" class="content-stage">
+        <div class="loading-card">
+          <div class="spinner-container">
+            <div class="double-bounce1"></div>
+            <div class="double-bounce2"></div>
+          </div>
+          <h2 id="loading-status-title">Scraping Landing Page...</h2>
+          <p id="loading-status-desc">Parsing metadata, layout containers, and style configurations.</p>
+          
+          <ul class="loading-checklist">
+            <li id="check-scrape" class="checking">Extracting site HTML, CSS parameters, and style tags</li>
+            <li id="check-images" class="pending">Downloading hero images, branding graphics, and logos</li>
+            <li id="check-gemini" class="pending">Consulting Gemini multimodal models to reverse-engineer strategy</li>
+            <li id="check-render" class="pending">Synthesizing personas, value maps, and messaging frameworks</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Error Stage -->
+      <section id="error-stage" class="content-stage">
+        <div class="error-card">
+          <div class="error-icon">⚠️</div>
+          <h2>Analysis Failed</h2>
+          <p id="error-message-text">We encountered an issue scraping the specified website. This might be due to server rate limits or incorrect URL format.</p>
+          <div class="error-actions">
+            <button id="btn-try-again" class="btn btn-primary">Try Again</button>
+            <button id="btn-open-settings-error" class="btn btn-secondary">Check Gemini API Key</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results Stage -->
+      <section id="results-stage" class="content-stage">
+        
+        <!-- Results Tabs Navigation -->
+        <div class="tabs-nav">
+          <button class="tab-btn active" data-tab="tab-overview">Overview & GTM</button>
+          <button class="tab-btn" data-tab="tab-personas">Target Personas</button>
+          <button class="tab-btn" data-tab="tab-messaging">Value Props & Messaging</button>
+          <button class="tab-btn" data-tab="tab-visuals">Visual Identity</button>
+          <button class="tab-btn" data-tab="tab-exports">Raw Exports</button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="tabs-container">
+          
+          <!-- Tab 1: Overview & GTM -->
+          <div id="tab-overview" class="tab-content active">
+            <div class="results-grid">
+              
+              <div class="card card-wide bg-gradient-brand">
+                <div class="card-tag">Core Pitch</div>
+                <h3 id="overview-elevator-pitch" class="headline-large">--</h3>
+                <div class="meta-info-strip">
+                  <div><strong>Target Domain:</strong> <span id="meta-domain">--</span></div>
+                  <div><strong>Site Title:</strong> <span id="meta-title">--</span></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>Core Category</h3>
+                <p id="overview-category" class="content-highlight">--</p>
+                <p class="sub-description">The market segment or product space this landing page claims dominance in.</p>
+              </div>
+
+              <div class="card">
+                <h3>Market Differentiation</h3>
+                <p id="overview-differentiation">--</p>
+              </div>
+
+              <div class="card card-wide">
+                <h3>Go-To-Market & Pricing Strategy</h3>
+                <div class="gtm-details-grid">
+                  <div>
+                    <h4>GTM Motion</h4>
+                    <p id="gtm-motion" class="badge">--</p>
+                    <p class="detail-explanation">Calculated sales funnel structure (e.g. self-serve, enterprise, developer-first).</p>
+                  </div>
+                  <div>
+                    <h4>Pricing Structure</h4>
+                    <p id="gtm-pricing">--</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card card-wide">
+                <h3>Conversion Tactics & Growth Loops</h3>
+                <ul id="gtm-conversion-list" class="styled-list">
+                  <li>--</li>
+                </ul>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Tab 2: Target Personas -->
+          <div id="tab-personas" class="tab-content">
+            <div id="personas-container" class="personas-grid">
+              <!-- Dynamically populated persona cards -->
+            </div>
+          </div>
+
+          <!-- Tab 3: Value Props & Messaging -->
+          <div id="tab-messaging" class="tab-content">
+            <div class="results-grid">
+              
+              <div class="card card-wide">
+                <div class="card-tag">Reverse-Engineered Tagline</div>
+                <h2 id="messaging-hero-tagline" class="tagline-large">--</h2>
+              </div>
+
+              <div class="card">
+                <h3>Tone of Voice</h3>
+                <div id="messaging-tone-tags" class="tag-cloud">
+                  <!-- Tone tags go here -->
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>Communication Framework</h3>
+                <p id="messaging-framework">--</p>
+              </div>
+
+              <div class="card card-wide">
+                <h3>Core Value Propositions</h3>
+                <div id="value-props-container" class="value-props-list">
+                  <!-- Value propositions list -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Tab 4: Visual Identity -->
+          <div id="tab-visuals" class="tab-content">
+            <div class="results-grid">
+              
+              <div class="card card-wide">
+                <h3>Extracted Colors</h3>
+                <p class="section-instruction">Extracted from CSS stylesheets. Click any hex code to copy it.</p>
+                <div id="colors-palette-container" class="colors-palette">
+                  <!-- Colors grid -->
+                </div>
+                
+                <div id="css-variables-container" class="css-variables-list">
+                  <!-- CSS Variables table -->
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>Visual Design Critique</h3>
+                <p id="visuals-theme" class="content-highlight">--</p>
+                <hr class="card-divider">
+                <p id="visuals-feedback">--</p>
+              </div>
+
+              <div class="card">
+                <h3>UX & Readability Critique</h3>
+                <p id="visuals-ux-critique">--</p>
+              </div>
+
+              <div class="card card-wide">
+                <h3>Captured Brand Graphics</h3>
+                <p class="section-instruction">Visual assets scraped directly from the page layout for multimodal analysis.</p>
+                <div id="assets-preview-container" class="assets-preview-grid">
+                  <!-- Logos / Hero image previews -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Tab 5: Exports -->
+          <div id="tab-exports" class="tab-content">
+            <div class="export-options-grid">
+              
+              <div class="export-option-card">
+                <h3>Strategy Brief (.md)</h3>
+                <p>A beautifully formatted Markdown report ready to import into Notion, Google Docs, or email briefing notes.</p>
+                <button id="btn-download-md" class="btn btn-action btn-full-width">Download Markdown</button>
+              </div>
+
+              <div class="export-option-card">
+                <h3>Raw Analysis JSON (.json)</h3>
+                <p>Structured marketing schema containing clean variables for database storage or programmatic pipelines.</p>
+                <button id="btn-download-json" class="btn btn-secondary btn-full-width">Download JSON Schema</button>
+              </div>
+
+            </div>
+
+            <div class="markdown-preview-card">
+              <div class="preview-header">
+                <span>Markdown Preview</span>
+                <button id="btn-copy-md" class="btn btn-tiny">Copy Raw</button>
+              </div>
+              <pre id="markdown-preview-text">--</pre>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Settings Modal (Gemini API Key configuration) -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Gemini API Configuration</h2>
+        <button id="btn-close-settings" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>By default, this tool can leverage our shared server-side key. However, to prevent hitting public rate limits, we recommend adding your own free Gemini API key.</p>
+        
+        <div class="instruction-box">
+          <h4>How to get a free API Key:</h4>
+          <ol>
+            <li>Go to <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a>.</li>
+            <li>Log in with your Google account.</li>
+            <li>Click <strong>"Get API Key"</strong>.</li>
+            <li>Create a new key and copy-paste it below.</li>
+          </ol>
+        </div>
+
+        <div class="form-group">
+          <label for="gemini-key-input">Gemini API Key</label>
+          <input type="password" id="gemini-key-input" placeholder="AIzaSy...">
+          <span class="input-note">This key is saved strictly in your local browser cache (localStorage) and never stored on our servers.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-clear-key" class="btn btn-danger">Clear Key</button>
+        <button id="btn-save-key" class="btn btn-primary">Save Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>

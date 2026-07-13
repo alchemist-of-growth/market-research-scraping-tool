@@ -1,36 +1,42 @@
-## Project instructions 
-Read before starting project. 
+# IntelScrape — Product Strategy & Branding Intelligence Tool
 
-## Learning
+IntelScrape is a standalone, web-based tool that reverse-engineers a company's product strategy, positioning, GTM motions, target personas, and visual styling by scraping its landing page.
 
-Track two types of knowledge:
-- Domain: what things are (product context, user preferences, APIs, naming conventions, team decisions
-- Procedural: how to do thing (deploy steps, test commands, review flows)
+---
 
-Organize knowledge as a hierarchy of .md files:
-- knowledge/index.md routes to categories
-- Categories hold the details
-Progressive disclosure. Read top-down, only load what you need.
+## Key Features
 
-Log errors to knowledge/errors.md. Not every error is a mistake:
-- Deterministic errors (bad schema, wrong type, missing field) → conclude immediatel
-- Infrastructure errors (timeout, rate limit, network) → log, no conclusion until pattern emerge
-- Conclusions graduate into the relevant domain or procedural file
+1. **Deep Branding Scrape**: Downloads inline and external stylesheets to parse color themes, variables, and tags.
+2. **Local Image Saving**: Downloads branding logo, hero images, and Open Graph banners and saves them locally (`static/scraped_images/`) to avoid CORS errors.
+3. **Strategic GTM Analysis**: Integrates with Google Gemini to identify value propositions, core differentiator parameters, marketing funnel models, and detailed target persona cards.
+4. **Interactive Dashboard**: A glassmorphic dark-theme UI with tabbed strategic results, localStorage history cache, and Markdown/JSON export capabilities.
 
-Actively manage the knowledge system. This is as important as the current task:
-- Review knowledge files at the start of each session
-- Merge overlapping categories
-- Split files that grow too long
-- Remove knowledge that's no longer accurate
-- Create new categories when patterns emerge
-- When you notice something that should be in claude.md but isn't — a pattern, a preference, a correction — propose the edit. Don't wait to be asked.
-Claude reads claude.md at the start of every session. This instruction tells it to build knowledge as it works - what your system looks like, how your product works, what went wrong and why.
+---
 
-The key is confidence. A single timeout teaches nothing. A bad schema teaches immediately. The system needs to know the difference, or every failed network call becomes a "lesson."
+## Getting Started
 
-Domain and procedural knowledge are separate because they serve different purposes. Mixing them makes both worse.
+### 1. Configure the Gemini API Key
+To run strategic analysis, the backend needs a Gemini API Key. You can set it in a `.env` file in the project root:
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+*(Alternatively, you can leave it blank and paste your key directly into the settings modal in the web interface).*
 
-No database. No dependencies. Structured markdown that gets smarter every session.
+### 2. Install Dependencies
+```bash
+python3 -m pip install -r requirements.txt
+```
 
+### 3. Run the App
+```bash
+python3 main.py
+```
+Open `http://localhost:8000/` in your browser.
 
+---
 
+## Public Deployment
+
+This application is ready to host on free hosting plans like Render's free tier. Both the FastAPI server and frontend files are served together, making deployment simple.
+
+For step-by-step deploy instructions, see [deploy_guide.md](file:///Users/nishantagarwal/.gemini/antigravity/brain/4288e423-ed23-454b-9df3-b0148c2ac4dd/deploy_guide.md).
