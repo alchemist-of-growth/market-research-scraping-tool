@@ -224,19 +224,38 @@ async def analyze_website_strategy(scraped_data, custom_api_key=None):
         raise Exception(f"Failed to analyze product strategy via Gemini: {e}")
 
 async def analyze_via_openrouter(scraped_data, api_key):
-    """Sends website data to OpenRouter using Llama 3.3 70B Free model (text-only routing)."""
-    logger.info("Routing request to OpenRouter using meta-llama/llama-3.3-70b-instruct:free")
+    """Sends website data and image assets to OpenRouter using Gemini 2.5 Flash model."""
+    logger.info("Routing request to OpenRouter using google/gemini-2.5-flash")
     
     # 1. Prepare system instruction and user prompt
     prompt_text = generate_analysis_prompt(scraped_data)
     
-    # 2. Build content array for user message (text-only to prevent vision endpoint errors)
+    # 2. Build content array for user message
     content_parts = [
         {
             "type": "text",
             "text": prompt_text
         }
     ]
+    
+    # 3. Add base64 images to content parts
+    images = scraped_data.get("images", {})
+    for img_name, img_info in images.items():
+        try:
+            mime_type = img_info.get("mime_type", "image/png")
+            if "svg" in mime_type.lower():
+                continue
+            base64_data = img_info.get("base64_data", "")
+            if base64_data:
+                content_parts.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{mime_type};base64,{base64_data}"
+                    }
+                })
+                logger.info(f"Appended image {img_name} to OpenRouter payload.")
+        except Exception as e:
+            logger.error(f"Failed to process image {img_name} for OpenRouter: {e}")
             
     # 4. Make HTTP request to OpenRouter API
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -248,7 +267,7 @@ async def analyze_via_openrouter(scraped_data, api_key):
     }
     
     payload = {
-        "model": "meta-llama/llama-3.3-70b-instruct:free",
+        "model": "google/gemini-2.5-flash",
         "messages": [
             {
                 "role": "system",
