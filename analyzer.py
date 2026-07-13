@@ -198,16 +198,22 @@ async def analyze_website_strategy(scraped_data, custom_api_key=None):
             generation_config=generation_config
         )
         
-        # Clean up any potential markdown fences in the response text
+        # Find outermost curly braces to handle any extra text wrapper or trailing characters from the model
         response_text = response.text.strip()
-        if response_text.startswith("```"):
-            # If model ignored system instructions and wrapped in codeblock, strip it
-            response_text = re.sub(r"^```(?:json)?\n", "", response_text)
-            response_text = re.sub(r"\n```$", "", response_text)
+        first_brace = response_text.find('{')
+        last_brace = response_text.rfind('}')
+        if first_brace != -1 and last_brace != -1:
+            json_content = response_text[first_brace:last_brace+1]
+        else:
+            json_content = response_text
             
         # Parse output to ensure it is valid JSON
-        parsed_json = json.loads(response_text)
-        return parsed_json
+        try:
+            parsed_json = json.loads(json_content)
+            return parsed_json
+        except Exception as json_err:
+            logger.error(f"Failed to parse JSON response: {json_err}. Raw response text:\n{response_text}")
+            raise json_err
     except Exception as e:
         logger.error(f"Gemini generation error: {e}")
         raise Exception(f"Failed to analyze product strategy via Gemini: {e}")
