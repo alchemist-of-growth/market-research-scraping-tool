@@ -93,9 +93,9 @@ async def analyze_website_strategy(scraped_data, custom_api_key=None):
         
     genai.configure(api_key=api_key)
     
-    # We use gemini-2.0-flash as it is highly efficient, multimodal, and has JSON mode support
+    # We use gemini-3.1-flash-lite as it is highly efficient, multimodal, and has JSON mode support
     model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
+        model_name="gemini-3.1-flash-lite",
         system_instruction=SYSTEM_INSTRUCTION
     )
     
