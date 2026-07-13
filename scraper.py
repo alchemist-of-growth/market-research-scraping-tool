@@ -79,7 +79,7 @@ async def download_and_save_image_locally(client, url, domain, img_name):
                 logger.info(f"Saved image locally: {file_path}")
                 
                 encoded = base64.b64encode(response.content).decode("utf-8")
-                local_web_path = f"/static/scraped_images/{domain}/{img_name}.{ext}"
+                local_web_path = f"/scraped_images/{domain}/{img_name}.{ext}"
                 
                 return {
                     "url": url,

@@ -497,13 +497,18 @@ document.addEventListener("DOMContentLoaded", () => {
         card.id = `critique-asset-${key}`;
         card.setAttribute("data-asset-key", key);
 
+        let imgUrl = images[key];
+        if (imgUrl && imgUrl.startsWith("/static/")) {
+          imgUrl = imgUrl.substring(7);
+        }
+
         card.innerHTML = `
           <div class="critique-asset-header">
             <strong>${key.toUpperCase().replace("_", " ")}</strong>
             <span class="tag">Visual Target</span>
           </div>
           <div class="critique-asset-image-wrapper">
-            <img src="${images[key]}" alt="${key} asset" crossorigin="anonymous">
+            <img src="${imgUrl}" alt="${key} asset" crossorigin="anonymous">
           </div>
         `;
         assetsColumn.appendChild(card);
