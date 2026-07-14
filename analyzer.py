@@ -403,10 +403,25 @@ async def call_openrouter_api(agent_name, system_instruction, prompt, scraped_da
     raise Exception(f"OpenRouter returned error: {last_error}")
 
 async def run_agent_inference(agent_name, system_instruction, prompt, scraped_data, api_key):
-    if api_key.startswith("sk-or-"):
-        return await call_openrouter_api(agent_name, system_instruction, prompt, scraped_data, api_key)
-    else:
-        return await call_gemini_api(agent_name, system_instruction, prompt, scraped_data, api_key)
+    import asyncio
+    max_rate_limit_retries = 5
+    backoff_seconds = 4
+    
+    for attempt in range(max_rate_limit_retries):
+        try:
+            if api_key.startswith("sk-or-"):
+                return await call_openrouter_api(agent_name, system_instruction, prompt, scraped_data, api_key)
+            else:
+                return await call_gemini_api(agent_name, system_instruction, prompt, scraped_data, api_key)
+        except Exception as e:
+            err_str = str(e)
+            if "ResourceExhausted" in err_str or "Quota exceeded" in err_str or "429" in err_str:
+                if attempt < max_rate_limit_retries - 1:
+                    sleep_time = backoff_seconds * (2 ** attempt)
+                    logger.warning(f"Rate limit hit for {agent_name} on attempt {attempt + 1}. Backing off for {sleep_time} seconds before retry...")
+                    await asyncio.sleep(sleep_time)
+                    continue
+            raise e
 
 async def run_critic_qualitative_check(agent_name, state, api_key):
     keys = get_agent_keys(agent_name)
