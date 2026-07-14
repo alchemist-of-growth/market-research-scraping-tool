@@ -4,10 +4,11 @@ import base64
 import google.generativeai as genai
 import httpx
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
-# Prompt defining instructions for the Gemini model
+# Prompt defining instructions for the Gemini model (kept for backwards compatibility and schema documentation)
 SYSTEM_INSTRUCTION = """You are an elite product marketing director, veteran competitor intelligence analyst, and principal visual brand auditor.
 Your job is to perform a deep-dive, forensic reverse-engineering of a competitor's product positioning, messaging narrative, category framing, market SWOT gaps, and visual identity by analyzing its scraped website text, metadata, CSS properties, and rendered full-page screenshot.
 
@@ -155,38 +156,160 @@ Meta Description: {scraped_data.get('meta_description')}
     prompt += "\nEvaluate the typography, design layout, imagery styles, UX flow, GTM strategy, value propositions, messaging pillars, and target personas using the provided data and the attached visual assets (like Logo, Hero image, or Open Graph banner)."
     return prompt
 
-async def analyze_website_strategy(scraped_data, custom_api_key=None):
-    """Sends website data and image assets to Gemini to reverse-engineer GTM and product strategy."""
-    # Resolve API Key: Custom header key has priority, then backend env variable
-    api_key = custom_api_key or os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise Exception("Gemini API key is not configured. Please set it in Settings (UI) or environment variables.")
+def count_words(text):
+    if not text:
+        return 0
+    cleaned = re.sub(r'<[^>]*>', '', text)
+    words = cleaned.split()
+    return len(words)
+
+def count_sentences(text):
+    if not text:
+        return 0
+    sentences = re.split(r'[.!?]+(?:\s+|$)', text.strip())
+    sentences = [s for s in sentences if s.strip()]
+    return len(sentences)
+
+def has_citations(text):
+    if not text:
+        return False
+    if '"' in text or "'" in text or '`' in text:
+        return True
+    lower_text = text.lower()
+    if any(keyword in lower_text for keyword in ["cite", "according to", "source", "screenshot", "css", "variable", "color", "#", "heading", "paragraph"]):
+        return True
+    return False
+
+def validate_field(val, field_name):
+    if not val:
+        return [f"{field_name} is empty or missing"]
+    errors = []
+    w_count = count_words(val)
+    s_count = count_sentences(val)
+    c_check = has_citations(val)
+    if w_count < 50:
+        errors.append(f"{field_name} word count is {w_count} (must be >= 50)")
+    if s_count < 3:
+        errors.append(f"{field_name} sentence count is {s_count} (must be >= 3)")
+    if not c_check:
+        errors.append(f"{field_name} does not cite original evidence (must cite copy/styles/headings/screenshots)")
+    return errors
+
+def get_agent_keys(agent_name):
+    if agent_name == "Researcher Agent":
+        return ["researcher_data"]
+    elif agent_name == "Product Strategy Agent":
+        return ["summary", "positioning_statement", "messaging_analysis", "product_positioning", "narrative_arc"]
+    elif agent_name == "Visual Brand Auditor Agent":
+        return ["design_critique", "messaging_audit"]
+    elif agent_name == "SWOT & Battlecard Agent":
+        return ["swot_analysis", "sales_battlecard"]
+    return []
+
+def validate_agent_output(agent_name, state):
+    errors = []
+    if agent_name == "Researcher Agent":
+        res_data = state.get("researcher_data", {})
+        if not res_data:
+            errors.append("researcher_data is missing or empty")
+            
+    elif agent_name == "Product Strategy Agent":
+        summary = state.get("summary", {})
+        errors.extend(validate_field(summary.get("elevator_pitch"), "summary.elevator_pitch"))
+        errors.extend(validate_field(summary.get("target_audience"), "summary.target_audience"))
+        errors.extend(validate_field(summary.get("category_strategy"), "summary.category_strategy"))
         
-    # Auto-detect OpenRouter API Key prefix
-    if api_key.startswith("sk-or-"):
-        return await analyze_via_openrouter(scraped_data, api_key)
+        pos = state.get("positioning_statement", {})
+        errors.extend(validate_field(pos.get("target_audience"), "positioning_statement.target_audience"))
+        errors.extend(validate_field(pos.get("product_category"), "positioning_statement.product_category"))
+        errors.extend(validate_field(pos.get("key_benefit"), "positioning_statement.key_benefit"))
+        errors.extend(validate_field(pos.get("reason_to_believe"), "positioning_statement.reason_to_believe"))
         
+        msg = state.get("messaging_analysis", {})
+        errors.extend(validate_field(msg.get("problem_solved"), "messaging_analysis.problem_solved"))
+        for i, theme in enumerate(msg.get("messaging_themes", [])):
+            errors.extend(validate_field(theme.get("description"), f"messaging_analysis.messaging_themes[{i}].description"))
+            
+        prod = state.get("product_positioning", {})
+        errors.extend(validate_field(prod.get("pricing_approach"), "product_positioning.pricing_approach"))
+        
+        narrative = state.get("narrative_arc", {})
+        errors.extend(validate_field(narrative.get("villain"), "narrative_arc.villain"))
+        errors.extend(validate_field(narrative.get("hero"), "narrative_arc.hero"))
+        errors.extend(validate_field(narrative.get("transformation"), "narrative_arc.transformation"))
+        errors.extend(validate_field(narrative.get("stakes"), "narrative_arc.stakes"))
+        
+    elif agent_name == "Visual Brand Auditor Agent":
+        design = state.get("design_critique", {})
+        errors.extend(validate_field(design.get("overall_impression"), "design_critique.overall_impression"))
+        errors.extend(validate_field(design.get("color_palette_feedback"), "design_critique.color_palette_feedback"))
+        errors.extend(validate_field(design.get("visual_theme"), "design_critique.visual_theme"))
+        
+        vh = design.get("visual_hierarchy", {})
+        errors.extend(validate_field(vh.get("first_impression"), "design_critique.visual_hierarchy.first_impression"))
+        errors.extend(validate_field(vh.get("reading_flow"), "design_critique.visual_hierarchy.reading_flow"))
+        errors.extend(validate_field(vh.get("emphasis_critique"), "design_critique.visual_hierarchy.emphasis_critique"))
+        
+        acc = design.get("accessibility", {})
+        errors.extend(validate_field(acc.get("color_contrast"), "design_critique.accessibility.color_contrast"))
+        errors.extend(validate_field(acc.get("touch_targets"), "design_critique.accessibility.touch_targets"))
+        errors.extend(validate_field(acc.get("text_readability"), "design_critique.accessibility.text_readability"))
+        
+        for i, finding in enumerate(design.get("usability_findings", [])):
+            errors.extend(validate_field(finding.get("issue"), f"design_critique.usability_findings[{i}].issue"))
+            errors.extend(validate_field(finding.get("recommendation"), f"design_critique.usability_findings[{i}].recommendation"))
+            
+        for i, finding in enumerate(design.get("consistency_findings", [])):
+            errors.extend(validate_field(finding.get("issue"), f"design_critique.consistency_findings[{i}].issue"))
+            errors.extend(validate_field(finding.get("recommendation"), f"design_critique.consistency_findings[{i}].recommendation"))
+            
+        for i, rec in enumerate(design.get("priority_recommendations", [])):
+            errors.extend(validate_field(rec, f"design_critique.priority_recommendations[{i}]"))
+            
+        audit = state.get("messaging_audit", {})
+        errors.extend(validate_field(audit.get("clarity"), "messaging_audit.clarity"))
+        errors.extend(validate_field(audit.get("differentiation"), "messaging_audit.differentiation"))
+        errors.extend(validate_field(audit.get("proof"), "messaging_audit.proof"))
+        errors.extend(validate_field(audit.get("resonance"), "messaging_audit.resonance"))
+        
+    elif agent_name == "SWOT & Battlecard Agent":
+        swot = state.get("swot_analysis", {})
+        for key in ["strengths", "weaknesses", "opportunities", "threats"]:
+            for i, val in enumerate(swot.get(key, [])):
+                errors.extend(validate_field(val, f"swot_analysis.{key}[{i}]"))
+                
+        battlecard = state.get("sales_battlecard", {})
+        for i, obj in enumerate(battlecard.get("objection_handling", [])):
+            errors.extend(validate_field(obj.get("response"), f"sales_battlecard.objection_handling[{i}].response"))
+            
+        for i, lm in enumerate(battlecard.get("landmines_to_set", [])):
+            errors.extend(validate_field(lm.get("goal"), f"sales_battlecard.landmines_to_set[{i}].goal"))
+            
+    return errors
+
+def parse_json_from_response(response_text):
+    first_brace = response_text.find('{')
+    last_brace = response_text.rfind('}')
+    if first_brace != -1 and last_brace != -1:
+        json_content = response_text[first_brace:last_brace+1]
+    else:
+        json_content = response_text
+    return json.loads(json_content)
+
+async def call_gemini_api(agent_name, system_instruction, prompt, scraped_data, api_key):
     genai.configure(api_key=api_key)
-    
-    # We use gemini-3.1-flash-lite as it is highly efficient, multimodal, and has JSON mode support
     model = genai.GenerativeModel(
         model_name="gemini-3.1-flash-lite",
-        system_instruction=SYSTEM_INSTRUCTION
+        system_instruction=system_instruction
     )
     
-    # Construct the multimodal request contents
-    prompt_text = generate_analysis_prompt(scraped_data)
-    contents = [prompt_text]
-    
-    # Append image parts if available
+    contents = [prompt]
     images = scraped_data.get("images", {})
     for img_name, img_info in images.items():
         try:
             mime_type = img_info.get("mime_type", "image/png")
             if "svg" in mime_type.lower():
-                logger.info(f"Skipping SVG image {img_name} for Gemini payload as SVGs are unsupported.")
                 continue
-                
             base64_data = img_info.get("base64_data", "")
             if base64_data:
                 img_bytes = base64.b64decode(base64_data)
@@ -194,57 +317,32 @@ async def analyze_website_strategy(scraped_data, custom_api_key=None):
                     "mime_type": mime_type,
                     "data": img_bytes
                 })
-                logger.info(f"Appended image {img_name} to Gemini payload.")
         except Exception as e:
-            logger.error(f"Failed to process image {img_name} for analyzer: {e}")
+            logger.error(f"Failed to process image {img_name} for agent {agent_name}: {e}")
             
     generation_config = {
         "response_mime_type": "application/json",
         "temperature": 0.2
     }
     
-    try:
-        response = await model.generate_content_async(
-            contents,
-            generation_config=generation_config
-        )
-        
-        # Find outermost curly braces to handle any extra text wrapper or trailing characters from the model
-        response_text = response.text.strip()
-        first_brace = response_text.find('{')
-        last_brace = response_text.rfind('}')
-        if first_brace != -1 and last_brace != -1:
-            json_content = response_text[first_brace:last_brace+1]
-        else:
-            json_content = response_text
-            
-        # Parse output to ensure it is valid JSON
-        try:
-            parsed_json = json.loads(json_content)
-            return parsed_json
-        except Exception as json_err:
-            logger.error(f"Failed to parse JSON response: {json_err}. Raw response text:\n{response_text}")
-            raise json_err
-    except Exception as e:
-        logger.error(f"Gemini generation error: {e}")
-        raise Exception(f"Failed to analyze product strategy via Gemini: {e}")
+    response = await model.generate_content_async(
+        contents,
+        generation_config=generation_config
+    )
+    
+    response_text = response.text.strip()
+    return parse_json_from_response(response_text)
 
-async def analyze_via_openrouter(scraped_data, api_key):
-    """Sends website data and image assets to OpenRouter using Google Gemma 4 31B free model."""
-    logger.info("Routing request to OpenRouter using google/gemma-4-31b-it:free")
+async def call_openrouter_api(agent_name, system_instruction, prompt, scraped_data, api_key):
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/alchemist-of-growth/market-research-scraping-tool",
+        "X-Title": "Market Research Scraping Tool"
+    }
     
-    # 1. Prepare system instruction and user prompt
-    prompt_text = generate_analysis_prompt(scraped_data)
-    
-    # 2. Build content array for user message
-    content_parts = [
-        {
-            "type": "text",
-            "text": prompt_text
-        }
-    ]
-    
-    # 3. Add base64 images to content parts
+    content_parts = [{"type": "text", "text": prompt}]
     images = scraped_data.get("images", {})
     for img_name, img_info in images.items():
         try:
@@ -259,19 +357,9 @@ async def analyze_via_openrouter(scraped_data, api_key):
                         "url": f"data:{mime_type};base64,{base64_data}"
                     }
                 })
-                logger.info(f"Appended image {img_name} to OpenRouter payload.")
         except Exception as e:
-            logger.error(f"Failed to process image {img_name} for OpenRouter: {e}")
+            logger.error(f"Failed to process image {img_name} for OpenRouter {agent_name}: {e}")
             
-    # 4. Make HTTP request to OpenRouter API
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/alchemist-of-growth/market-research-scraping-tool",
-        "X-Title": "Market Research Scraping Tool"
-    }
-    
     models_to_try = [
         "google/gemma-4-31b-it:free",
         "nvidia/nemotron-nano-12b-v2-vl:free",
@@ -282,7 +370,7 @@ async def analyze_via_openrouter(scraped_data, api_key):
         "messages": [
             {
                 "role": "system",
-                "content": SYSTEM_INSTRUCTION
+                "content": system_instruction
             },
             {
                 "role": "user",
@@ -297,32 +385,186 @@ async def analyze_via_openrouter(scraped_data, api_key):
     
     last_error = None
     for model_name in models_to_try:
-        logger.info(f"Attempting OpenRouter request using model: {model_name}")
         payload["model"] = model_name
-        
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(url, headers=headers, json=payload)
                 if response.status_code == 200:
                     result = response.json()
                     response_text = result["choices"][0]["message"]["content"].strip()
-                    
-                    # Clean outer braces
-                    first_brace = response_text.find('{')
-                    last_brace = response_text.rfind('}')
-                    if first_brace != -1 and last_brace != -1:
-                        json_content = response_text[first_brace:last_brace+1]
-                    else:
-                        json_content = response_text
-                        
-                    parsed_json = json.loads(json_content)
-                    logger.info(f"Successfully processed request using OpenRouter model: {model_name}")
-                    return parsed_json
+                    return parse_json_from_response(response_text)
                 else:
-                    logger.warning(f"OpenRouter model {model_name} failed with status {response.status_code}: {response.text}")
                     last_error = response.text
         except Exception as e:
-            logger.warning(f"Exception during OpenRouter execution for model {model_name}: {e}")
             last_error = str(e)
             
     raise Exception(f"OpenRouter returned error: {last_error}")
+
+async def run_agent_inference(agent_name, system_instruction, prompt, scraped_data, api_key):
+    if api_key.startswith("sk-or-"):
+        return await call_openrouter_api(agent_name, system_instruction, prompt, scraped_data, api_key)
+    else:
+        return await call_gemini_api(agent_name, system_instruction, prompt, scraped_data, api_key)
+
+async def run_critic_qualitative_check(agent_name, state, api_key):
+    keys = get_agent_keys(agent_name)
+    content_to_check = {k: state[k] for k in keys if k in state}
+    
+    instruction = "You are the Critic Agent. Review the qualitative depth, tone, and logical consistency of the competitor analysis draft."
+    prompt = f"""
+Verify the following draft section for professional tone, strategic depth, and logical consistency.
+Agent: {agent_name}
+Draft Content: {json.dumps(content_to_check, indent=2)}
+
+If the content is shallow, uses generic marketing buzzwords, or lacks analytical depth, return a JSON response with status FAILED and a constructive feedback explanation.
+Otherwise, if it is high quality and meets all requirements, return status PASSED.
+
+Response schema:
+{{
+  "status": "PASSED" or "FAILED",
+  "feedback": "Detailed constructive feedback if FAILED, otherwise empty."
+}}
+"""
+    try:
+        res = await run_agent_inference(
+            agent_name="Critic Agent (Qualitative)",
+            system_instruction=instruction,
+            prompt=prompt,
+            scraped_data={},
+            api_key=api_key
+        )
+        if res.get("status") == "FAILED":
+            return [res.get("feedback", "Qualitative check failed.")]
+        return []
+    except Exception as e:
+        logger.warning(f"Qualitative Critic check failed to run: {e}")
+        return []
+
+async def analyze_website_strategy(scraped_data, custom_api_key=None):
+    """Sends website data and image assets to sequential agents to reverse-engineer GTM and product strategy."""
+    api_key = custom_api_key or os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise Exception("Gemini API key is not configured. Please set it in Settings (UI) or environment variables.")
+    if not scraped_data or not scraped_data.get("url"):
+        raise Exception("scraped_data is empty or missing target url")
+        
+    state = {
+        "researcher_data": {},
+        "summary": {},
+        "positioning_statement": {},
+        "messaging_analysis": {},
+        "product_positioning": {},
+        "narrative_arc": {},
+        "messaging_audit": {},
+        "swot_analysis": {},
+        "sales_battlecard": {},
+        "design_critique": {},
+        "critic_logs": []
+    }
+    
+    agents = [
+        {
+            "name": "Researcher Agent",
+            "instruction": "You are the Researcher Agent. Clean and structure the raw website data (headings, paragraphs, lists, colors, CSS variables) into a structured JSON under 'researcher_data'.",
+            "prompt_builder": lambda s: f"Analyze and structure the scraped website data:\n{json.dumps(scraped_data)}"
+        },
+        {
+            "name": "Product Strategy Agent",
+            "instruction": "You are the Product Strategy Agent. Generate summary, positioning_statement, messaging_analysis, product_positioning, and narrative_arc. Each description must be a detailed 3-5 sentence paragraph (>=50 words, >=3 sentences) citing original website copy.",
+            "prompt_builder": lambda s: f"Generate strategy nodes based on researcher data:\n{json.dumps(s.get('researcher_data'))}"
+        },
+        {
+            "name": "Visual Brand Auditor Agent",
+            "instruction": "You are the Visual Brand Auditor Agent. Critique the design system, usability, visual hierarchy, consistency, accessibility, and overall aesthetics based on the CSS styles, variables, and full-page screenshot. Also audit messaging clarity, differentiation, proof, and resonance. Each description must be a detailed 3-5 sentence paragraph (>=50 words, >=3 sentences) citing specific CSS properties/colors or original copy.",
+            "prompt_builder": lambda s: f"Generate visual brand audit and messaging audit based on style data and screenshot reference."
+        },
+        {
+            "name": "SWOT & Battlecard Agent",
+            "instruction": "You are the SWOT & Battlecard Agent. Synthesize strategic and visual findings into a SWOT analysis (strengths, weaknesses, opportunities, threats) and sales battlecard with objection handling talk-tracks. Each description must be a detailed 3-5 sentence paragraph (>=50 words, >=3 sentences). Objection responses must be direct, polished sales scripts.",
+            "prompt_builder": lambda s: f"Generate SWOT and sales battlecard based on state:\n{json.dumps({k: v for k, v in s.items() if k not in ['critic_logs', 'swot_analysis', 'sales_battlecard']})}"
+        }
+    ]
+    
+    for agent in agents:
+        agent_name = agent["name"]
+        retry_limit = 2
+        run_index = 1
+        
+        while run_index <= 1 + retry_limit:
+            # Build prompt
+            if run_index == 1:
+                prompt = agent["prompt_builder"](state)
+            else:
+                last_log = [l for l in state["critic_logs"] if l["agent"] == agent_name][-1]
+                agent_keys = get_agent_keys(agent_name)
+                prev_content = {k: state[k] for k in agent_keys if k in state}
+                prompt = f"""
+You previously generated the following content:
+{json.dumps(prev_content, indent=2)}
+
+However, the Critic Agent rejected it with the following feedback:
+{'; '.join(last_log.get('errors', []))}
+
+Please regenerate the content, making sure to fully address the feedback and satisfy all constraints.
+"""
+            
+            try:
+                agent_output = await run_agent_inference(
+                    agent_name=agent_name,
+                    system_instruction=agent["instruction"],
+                    prompt=prompt,
+                    scraped_data=scraped_data,
+                    api_key=api_key
+                )
+                
+                # Merge output into state
+                for k, v in agent_output.items():
+                    if k in state and k != "critic_logs":
+                        state[k] = v
+                        
+                # Validate output
+                errors = validate_agent_output(agent_name, state)
+                
+                # Perform LLM qualitative check if programmatic check passes and agent is not Researcher
+                if not errors and agent_name != "Researcher Agent":
+                    qual_errors = await run_critic_qualitative_check(agent_name, state, api_key)
+                    errors.extend(qual_errors)
+                    
+                if not errors:
+                    state["critic_logs"].append({
+                        "agent": agent_name,
+                        "run": run_index,
+                        "status": "PASSED",
+                        "errors": []
+                    })
+                    break
+                else:
+                    state["critic_logs"].append({
+                        "agent": agent_name,
+                        "run": run_index,
+                        "status": "FAILED",
+                        "errors": errors
+                    })
+                    logger.warning(f"{agent_name} failed validation on run {run_index}: {errors}")
+                    run_index += 1
+            except Exception as e:
+                err_msg = f"Error during execution of {agent_name}: {str(e)}"
+                logger.error(err_msg)
+                if "ResourceExhausted" in str(e) or "Quota exceeded" in str(e):
+                    raise e
+                state["critic_logs"].append({
+                    "agent": agent_name,
+                    "run": run_index,
+                    "status": "FAILED",
+                    "errors": [err_msg]
+                })
+                run_index += 1
+                
+        if run_index > 1 + retry_limit:
+            logger.error(f"Maximum retry limit ({retry_limit}) exceeded for {agent_name}. Proceeding with best-effort state.")
+            
+    return state
+
+async def analyze_via_openrouter(scraped_data, api_key):
+    """Fallback function kept for compatibility, calls Unified OpenRouter API call."""
+    return await call_openrouter_api("General Agent", SYSTEM_INSTRUCTION, generate_analysis_prompt(scraped_data), scraped_data, api_key)
