@@ -503,6 +503,7 @@ async def analyze_website_strategy(scraped_data, custom_api_key=None):
         retry_limit = 2
         run_index = 1
         
+        last_exception = None
         while run_index <= 1 + retry_limit:
             # Build prompt
             if run_index == 1:
@@ -522,13 +523,33 @@ Please regenerate the content, making sure to fully address the feedback and sat
 """
             
             try:
-                agent_output = await run_agent_inference(
-                    agent_name=agent_name,
-                    system_instruction=agent["instruction"],
-                    prompt=prompt,
-                    scraped_data=scraped_data,
-                    api_key=api_key
-                )
+                try:
+                    agent_output = await run_agent_inference(
+                        agent_name=agent_name,
+                        system_instruction=agent["instruction"],
+                        prompt=prompt,
+                        scraped_data=scraped_data,
+                        api_key=api_key
+                    )
+                except Exception as e:
+                    last_exception = e
+                    err_msg = f"Error during execution of {agent_name}: {str(e)}"
+                    logger.error(err_msg)
+                    if "ResourceExhausted" in str(e) or "Quota exceeded" in str(e):
+                        raise e
+                    state["critic_logs"].append({
+                        "agent": agent_name,
+                        "run": run_index,
+                        "status": "FAILED",
+                        "errors": [err_msg]
+                    })
+                    run_index += 1
+                    continue
+                
+                last_exception = None # Reset if API call succeeded
+                
+                if not isinstance(agent_output, dict):
+                    raise Exception("Agent output is not a valid JSON object")
                 
                 # Merge output into state
                 for k, v in agent_output.items():
@@ -561,10 +582,8 @@ Please regenerate the content, making sure to fully address the feedback and sat
                     logger.warning(f"{agent_name} failed validation on run {run_index}: {errors}")
                     run_index += 1
             except Exception as e:
-                err_msg = f"Error during execution of {agent_name}: {str(e)}"
+                err_msg = f"Error during parsing/validation of {agent_name}: {str(e)}"
                 logger.error(err_msg)
-                if "ResourceExhausted" in str(e) or "Quota exceeded" in str(e):
-                    raise e
                 state["critic_logs"].append({
                     "agent": agent_name,
                     "run": run_index,
@@ -574,6 +593,8 @@ Please regenerate the content, making sure to fully address the feedback and sat
                 run_index += 1
                 
         if run_index > 1 + retry_limit:
+            if last_exception:
+                raise last_exception
             logger.error(f"Maximum retry limit ({retry_limit}) exceeded for {agent_name}. Proceeding with best-effort state.")
             
     return state
