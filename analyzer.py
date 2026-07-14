@@ -450,6 +450,17 @@ async def analyze_website_strategy(scraped_data, custom_api_key=None):
     if not scraped_data or not scraped_data.get("url"):
         raise Exception("scraped_data is empty or missing target url")
         
+    # Strip base64 data from the dictionary used in text prompts to prevent token bloat
+    clean_scraped_data = scraped_data.copy()
+    if "images" in clean_scraped_data:
+        clean_images = {}
+        for img_name, img_info in clean_scraped_data["images"].items():
+            img_copy = img_info.copy()
+            if "base64_data" in img_copy:
+                img_copy["base64_data"] = "[BASE64_IMAGE_DATA_TRUNCATED]"
+            clean_images[img_name] = img_copy
+        clean_scraped_data["images"] = clean_images
+
     state = {
         "researcher_data": {},
         "summary": {},
@@ -468,7 +479,7 @@ async def analyze_website_strategy(scraped_data, custom_api_key=None):
         {
             "name": "Researcher Agent",
             "instruction": "You are the Researcher Agent. Clean and structure the raw website data (headings, paragraphs, lists, colors, CSS variables) into a structured JSON under 'researcher_data'.",
-            "prompt_builder": lambda s: f"Analyze and structure the scraped website data:\n{json.dumps(scraped_data)}"
+            "prompt_builder": lambda s: f"Analyze and structure the scraped website data:\n{json.dumps(clean_scraped_data)}"
         },
         {
             "name": "Product Strategy Agent",
