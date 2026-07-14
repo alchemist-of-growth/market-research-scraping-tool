@@ -287,6 +287,161 @@ def validate_agent_output(agent_name, state):
             
     return errors
 
+def normalize_schema(data, agent_name):
+    if not isinstance(data, dict):
+        return {}
+        
+    def clean_dict(d):
+        if not isinstance(d, dict):
+            return d
+        res = {}
+        for k, v in d.items():
+            new_k = k.lower().replace("-", "_").replace(" ", "_")
+            if isinstance(v, dict):
+                res[new_k] = clean_dict(v)
+            elif isinstance(v, list):
+                res[new_k] = [clean_dict(item) if isinstance(item, dict) else item for item in v]
+            else:
+                res[new_k] = v
+        return res
+
+    cleaned = clean_dict(data)
+    
+    if agent_name == "Product Strategy Agent":
+        summary = cleaned.setdefault("summary", {})
+        if not isinstance(summary, dict): summary = {"elevator_pitch": str(summary)}
+        summary.setdefault("elevator_pitch", "")
+        cleaned["summary"] = summary
+        
+        pos = cleaned.setdefault("positioning_statement", {})
+        if not isinstance(pos, dict): pos = {}
+        pos.setdefault("target_audience", "")
+        pos.setdefault("core_problem", "")
+        pos.setdefault("unique_value_proposition", "")
+        cleaned["positioning_statement"] = pos
+        
+        msg = cleaned.setdefault("messaging_analysis", {})
+        if not isinstance(msg, dict): msg = {}
+        msg.setdefault("primary_tagline", "")
+        benefits = msg.setdefault("key_benefits", [])
+        if isinstance(benefits, str): benefits = [benefits]
+        msg["key_benefits"] = benefits
+        cleaned["messaging_analysis"] = msg
+        
+        prod = cleaned.setdefault("product_positioning", {})
+        if not isinstance(prod, dict): prod = {}
+        prod.setdefault("market_category", "")
+        prod.setdefault("positioning_map_axis_x", "")
+        prod.setdefault("positioning_map_axis_y", "")
+        comps = prod.setdefault("competitors", [])
+        if not isinstance(comps, list): comps = []
+        clean_comps = []
+        for c in comps:
+            if isinstance(c, dict):
+                c.setdefault("name", "")
+                c.setdefault("x", "")
+                c.setdefault("y", "")
+                c.setdefault("justification", "")
+                clean_comps.append(c)
+        prod["competitors"] = clean_comps
+        cleaned["product_positioning"] = prod
+        
+        narr = cleaned.setdefault("narrative_arc", {})
+        if not isinstance(narr, dict): narr = {}
+        narr.setdefault("villain", "")
+        narr.setdefault("hero", "")
+        narr.setdefault("stakes", "")
+        cleaned["narrative_arc"] = narr
+
+    elif agent_name == "Visual Brand Auditor Agent":
+        design = cleaned.setdefault("design_critique", {})
+        if not isinstance(design, dict): design = {}
+        design.setdefault("overall_impression", "")
+        design.setdefault("color_palette_feedback", "")
+        design.setdefault("visual_theme", "")
+        
+        vh = design.setdefault("visual_hierarchy", {})
+        if not isinstance(vh, dict): vh = {}
+        vh.setdefault("first_impression", "")
+        vh.setdefault("reading_flow", "")
+        vh.setdefault("emphasis_critique", "")
+        design["visual_hierarchy"] = vh
+        
+        acc = design.setdefault("accessibility", {})
+        if not isinstance(acc, dict): acc = {}
+        acc.setdefault("color_contrast", "")
+        acc.setdefault("touch_targets", "")
+        acc.setdefault("text_readability", "")
+        design["accessibility"] = acc
+        
+        usability = design.setdefault("usability_findings", [])
+        if not isinstance(usability, list): usability = []
+        clean_usability = []
+        for item in usability:
+            if isinstance(item, dict):
+                item.setdefault("issue", "")
+                item.setdefault("recommendation", "")
+                clean_usability.append(item)
+        design["usability_findings"] = clean_usability
+        
+        consistency = design.setdefault("consistency_findings", [])
+        if not isinstance(consistency, list): consistency = []
+        clean_consistency = []
+        for item in consistency:
+            if isinstance(item, dict):
+                item.setdefault("issue", "")
+                item.setdefault("recommendation", "")
+                clean_consistency.append(item)
+        design["consistency_findings"] = clean_consistency
+        
+        recs = design.setdefault("priority_recommendations", [])
+        if isinstance(recs, str): recs = [recs]
+        design["priority_recommendations"] = recs
+        cleaned["design_critique"] = design
+        
+        audit = cleaned.setdefault("messaging_audit", {})
+        if not isinstance(audit, dict): audit = {}
+        audit.setdefault("clarity", "")
+        audit.setdefault("differentiation", "")
+        audit.setdefault("proof", "")
+        audit.setdefault("resonance", "")
+        cleaned["messaging_audit"] = audit
+
+    elif agent_name == "SWOT & Battlecard Agent":
+        swot = cleaned.setdefault("swot_analysis", {})
+        if not isinstance(swot, dict): swot = {}
+        for key in ["strengths", "weaknesses", "opportunities", "threats"]:
+            vals = swot.setdefault(key, [])
+            if isinstance(vals, str): vals = [vals]
+            swot[key] = vals
+        cleaned["swot_analysis"] = swot
+        
+        battle = cleaned.setdefault("sales_battlecard", {})
+        if not isinstance(battle, dict): battle = {}
+        
+        objs = battle.setdefault("objection_handling", [])
+        if not isinstance(objs, list): objs = []
+        clean_objs = []
+        for o in objs:
+            if isinstance(o, dict):
+                o.setdefault("objection", "")
+                o.setdefault("response", "")
+                clean_objs.append(o)
+        battle["objection_handling"] = clean_objs
+        
+        lms = battle.setdefault("landmines_to_set", [])
+        if not isinstance(lms, list): lms = []
+        clean_lms = []
+        for l in lms:
+            if isinstance(l, dict):
+                l.setdefault("goal", "")
+                l.setdefault("question", "")
+                clean_lms.append(l)
+        battle["landmines_to_set"] = clean_lms
+        cleaned["sales_battlecard"] = battle
+        
+    return cleaned
+
 def parse_json_from_response(response_text):
     first_brace = response_text.find('{')
     last_brace = response_text.rfind('}')
@@ -566,10 +721,25 @@ Please regenerate the content, making sure to fully address the feedback and sat
                 if not isinstance(agent_output, dict):
                     raise Exception("Agent output is not a valid JSON object")
                 
-                # Merge output into state
+                # Normalize schema keys and defaults
+                agent_output = normalize_schema(agent_output, agent_name)
+                
+                # Merge output into state, keeping more detailed content
                 for k, v in agent_output.items():
                     if k in state and k != "critic_logs":
-                        state[k] = v
+                        if isinstance(v, dict) and isinstance(state[k], dict):
+                            for sub_k, sub_v in v.items():
+                                prev_v = state[k].get(sub_k, "")
+                                if not prev_v or (isinstance(sub_v, str) and len(sub_v) > len(str(prev_v))):
+                                    state[k][sub_k] = sub_v
+                                elif isinstance(sub_v, list) and isinstance(prev_v, list) and len(sub_v) > len(prev_v):
+                                    state[k][sub_k] = sub_v
+                        else:
+                            prev_v = state[k]
+                            if not prev_v or (isinstance(v, str) and len(v) > len(str(prev_v))):
+                                state[k] = v
+                            elif isinstance(v, list) and isinstance(prev_v, list) and len(v) > len(prev_v):
+                                state[k] = v
                         
                 # Validate output
                 errors = validate_agent_output(agent_name, state)
