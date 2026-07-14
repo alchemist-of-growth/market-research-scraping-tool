@@ -266,8 +266,13 @@ async def analyze_via_openrouter(scraped_data, api_key):
         "X-Title": "Market Research Scraping Tool"
     }
     
+    models_to_try = [
+        "google/gemma-4-31b-it:free",
+        "nvidia/nemotron-nano-12b-v2-vl:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+    ]
+    
     payload = {
-        "model": "google/gemma-4-31b-it:free",
         "messages": [
             {
                 "role": "system",
@@ -284,26 +289,34 @@ async def analyze_via_openrouter(scraped_data, api_key):
         "temperature": 0.2
     }
     
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        if response.status_code != 200:
-            logger.error(f"OpenRouter API error: {response.status_code} - {response.text}")
-            raise Exception(f"OpenRouter returned error: {response.text}")
-            
-        result = response.json()
+    last_error = None
+    for model_name in models_to_try:
+        logger.info(f"Attempting OpenRouter request using model: {model_name}")
+        payload["model"] = model_name
+        
         try:
-            response_text = result["choices"][0]["message"]["content"].strip()
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(url, headers=headers, json=payload)
+                if response.status_code == 200:
+                    result = response.json()
+                    response_text = result["choices"][0]["message"]["content"].strip()
+                    
+                    # Clean outer braces
+                    first_brace = response_text.find('{')
+                    last_brace = response_text.rfind('}')
+                    if first_brace != -1 and last_brace != -1:
+                        json_content = response_text[first_brace:last_brace+1]
+                    else:
+                        json_content = response_text
+                        
+                    parsed_json = json.loads(json_content)
+                    logger.info(f"Successfully processed request using OpenRouter model: {model_name}")
+                    return parsed_json
+                else:
+                    logger.warning(f"OpenRouter model {model_name} failed with status {response.status_code}: {response.text}")
+                    last_error = response.text
+        except Exception as e:
+            logger.warning(f"Exception during OpenRouter execution for model {model_name}: {e}")
+            last_error = str(e)
             
-            # Clean outer braces
-            first_brace = response_text.find('{')
-            last_brace = response_text.rfind('}')
-            if first_brace != -1 and last_brace != -1:
-                json_content = response_text[first_brace:last_brace+1]
-            else:
-                json_content = response_text
-                
-            parsed_json = json.loads(json_content)
-            return parsed_json
-        except Exception as parse_err:
-            logger.error(f"Failed to parse OpenRouter JSON: {parse_err}. Raw response text:\n{response_text}")
-            raise Exception(f"Failed to parse OpenRouter response: {parse_err}")
+    raise Exception(f"OpenRouter returned error: {last_error}")
