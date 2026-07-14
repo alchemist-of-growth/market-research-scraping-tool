@@ -304,21 +304,22 @@ async def call_gemini_api(agent_name, system_instruction, prompt, scraped_data, 
     )
     
     contents = [prompt]
-    images = scraped_data.get("images", {})
-    for img_name, img_info in images.items():
-        try:
-            mime_type = img_info.get("mime_type", "image/png")
-            if "svg" in mime_type.lower():
-                continue
-            base64_data = img_info.get("base64_data", "")
-            if base64_data:
-                img_bytes = base64.b64decode(base64_data)
-                contents.append({
-                    "mime_type": mime_type,
-                    "data": img_bytes
-                })
-        except Exception as e:
-            logger.error(f"Failed to process image {img_name} for agent {agent_name}: {e}")
+    if agent_name == "Visual Brand Auditor Agent":
+        images = scraped_data.get("images", {})
+        for img_name, img_info in images.items():
+            try:
+                mime_type = img_info.get("mime_type", "image/png")
+                if "svg" in mime_type.lower():
+                    continue
+                base64_data = img_info.get("base64_data", "")
+                if base64_data:
+                    img_bytes = base64.b64decode(base64_data)
+                    contents.append({
+                        "mime_type": mime_type,
+                        "data": img_bytes
+                    })
+            except Exception as e:
+                logger.error(f"Failed to process image {img_name} for agent {agent_name}: {e}")
             
     generation_config = {
         "response_mime_type": "application/json",
@@ -343,22 +344,23 @@ async def call_openrouter_api(agent_name, system_instruction, prompt, scraped_da
     }
     
     content_parts = [{"type": "text", "text": prompt}]
-    images = scraped_data.get("images", {})
-    for img_name, img_info in images.items():
-        try:
-            mime_type = img_info.get("mime_type", "image/png")
-            if "svg" in mime_type.lower():
-                continue
-            base64_data = img_info.get("base64_data", "")
-            if base64_data:
-                content_parts.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:{mime_type};base64,{base64_data}"
-                    }
-                })
-        except Exception as e:
-            logger.error(f"Failed to process image {img_name} for OpenRouter {agent_name}: {e}")
+    if agent_name == "Visual Brand Auditor Agent":
+        images = scraped_data.get("images", {})
+        for img_name, img_info in images.items():
+            try:
+                mime_type = img_info.get("mime_type", "image/png")
+                if "svg" in mime_type.lower():
+                    continue
+                base64_data = img_info.get("base64_data", "")
+                if base64_data:
+                    content_parts.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{mime_type};base64,{base64_data}"
+                        }
+                    })
+            except Exception as e:
+                logger.error(f"Failed to process image {img_name} for OpenRouter {agent_name}: {e}")
             
     models_to_try = [
         "google/gemma-4-31b-it:free",
