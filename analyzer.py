@@ -224,8 +224,8 @@ async def analyze_website_strategy(scraped_data, custom_api_key=None):
         raise Exception(f"Failed to analyze product strategy via Gemini: {e}")
 
 async def analyze_via_openrouter(scraped_data, api_key):
-    """Sends website data and image assets to OpenRouter using Gemini 2.5 Flash model."""
-    logger.info("Routing request to OpenRouter using google/gemini-2.5-flash")
+    """Sends website data and image assets to OpenRouter using Google Gemma 4 31B free model."""
+    logger.info("Routing request to OpenRouter using google/gemma-4-31b-it:free")
     
     # 1. Prepare system instruction and user prompt
     prompt_text = generate_analysis_prompt(scraped_data)
@@ -267,7 +267,7 @@ async def analyze_via_openrouter(scraped_data, api_key):
     }
     
     payload = {
-        "model": "google/gemini-2.5-flash",
+        "model": "google/gemma-4-31b-it:free",
         "messages": [
             {
                 "role": "system",
