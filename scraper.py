@@ -96,6 +96,7 @@ async def scrape_product_page(url):
     parsed_url = urlparse(url)
     if not parsed_url.scheme:
         url = "https://" + url
+        parsed_url = urlparse(url)
 
     async with httpx.AsyncClient(verify=False) as client:
         try:
