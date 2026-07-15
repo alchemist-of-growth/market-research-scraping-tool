@@ -449,6 +449,9 @@ def parse_json_from_response(response_text):
         json_content = response_text[first_brace:last_brace+1]
     else:
         json_content = response_text
+    
+    # Strip trailing commas in objects and arrays to prevent strict JSONDecodeError
+    json_content = re.sub(r',\s*([\]\}])', r'\1', json_content)
     return json.loads(json_content)
 
 async def call_gemini_api(agent_name, system_instruction, prompt, scraped_data, api_key):
